@@ -1,0 +1,2 @@
+process.env.CLOUDV_SERVED_COMPONENT = "processing";
+require("./core")();

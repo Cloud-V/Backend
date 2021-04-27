@@ -1,0 +1,338 @@
+[{
+        "template": "Single Bus",
+        "ver": "1.0",
+        "last_updated": "13/12/2017",
+        "components": [{
+                "caption": "AHB-Lite",
+                "cloudvId": "cloudv.io/ahb_lite",
+                "provider": "cloudv.io",
+                "affinity": "infrastructure",
+                "type": "BUS",
+                "pos_x": 330,
+                "pos_y": 246,
+                "step": 100,
+                "length": 40
+            },
+            {
+                "caption": "dwarfRV32i",
+                "cloudvId": "cloudv.io/dwarfRV32i",
+                "provider": "cloudv.io",
+                "affinity": "infrastructure",
+                "type": "CPU",
+                "pos_x": 210,
+                "pos_y": 100,
+                "BusConn": {
+                    "orientation": "V"
+                },
+                "editable": [{
+                        "caption": "RF Bank Type",
+                        "name": "RF_Type",
+                        "type": "options",
+                        "options": [{
+                            "name": "single",
+                            "value": "single"
+                        }, {
+                            "name": "dual",
+                            "value": "dual"
+                        }]
+                    },
+                    {
+                        "caption": "Num of Interrupts",
+                        "name": "Num_Int",
+                        "type": "Int"
+                    },
+                    {
+                        "caption": "Clock Source",
+                        "name": "CLK_Src",
+                        "type": "options",
+                        "options": [{
+                            "name": "External",
+                            "value": "external"
+                        }, {
+                            "name": "External XTAL",
+                            "value": "external_xtal"
+                        }, {
+                            "name": "Internal RC",
+                            "value": "internal_rc"
+                        }]
+                    },
+                    {
+                        "caption": "MUL Extension",
+                        "name": "MUL_Ext",
+                        "type": "bool"
+                    }
+                ],
+                "noneditable": {
+                    "Area": 100000,
+                    "GCount": 3500
+                }
+            },
+            {
+                "caption": "Serial FLASH Controller",
+                "cloudvId": "cloudv.io/SMCTRL",
+                "provider": "cloudv.io",
+                "affinity": "infrastructure",
+                "type": "SMCTRL",
+                "pos_x": 90,
+                "pos_y": 180,
+                "BusConn": {
+                    "orientation": "V"
+                },
+                "editable": [{
+                        "caption": "Flash Type",
+                        "name": "Flash_Type",
+                        "type": "options",
+                        "options": [{
+                            "name": "SPI",
+                            "value": "spi"
+                        }, {
+                            "name": "QSI",
+                            "value": "qsi"
+                        }, {
+                            "name": "QSPI",
+                            "value": "qspi"
+                        }, {
+                            "name": "DSPI",
+                            "value": "dspi"
+                        }]
+                    },
+                    {
+                        "caption": "Base Address",
+                        "name": "BAddr",
+                        "type": "Addr"
+                    }
+                ],
+                "noneditable": {
+                    "Area": 100000,
+                    "GCount": 3500
+                }
+            },
+            {
+                "caption": "SRAM",
+                "cloudvId": "cloudv.io/sram",
+                "provider": "cloudv.io",
+                "affinity": "infrastructure",
+                "type": "SRAM",
+                "pos_x": 210,
+                "pos_y": 280,
+                "BusConn": {
+                    "orientation": "V"
+                },
+                "editable": [{
+                        "caption": "Size (KB)",
+                        "name": "Flash_Type",
+                        "type": "options",
+                        "options": [{
+                            "name": "4",
+                            "value": "4"
+                        }, {
+                            "name": "8",
+                            "value": "8"
+                        }, {
+                            "name": "16",
+                            "value": "16"
+                        }, {
+                            "name": "32",
+                            "value": "32"
+                        }]
+                    },
+                    {
+                        "caption": "Base Address",
+                        "name": "BAddr",
+                        "type": "Addr"
+                    }
+                ],
+                "noneditable": {
+                    "Area": 100000,
+                    "GCount": 3500
+                }
+            }
+        ]
+    },
+    {
+        "template": "Split Bus",
+        "ver": "1.0",
+        "last_updated": "13/12/2017",
+
+        "components": [{
+                "caption": "AHB-Lite",
+                "cloudvId": "cloudv.io/ahb_lite",
+                "provider": "cloudv.io",
+                "affinity": "infrastructure",
+                "type": "BUS",
+                "pos_x": 330,
+                "pos_y": 246,
+                "step": 100,
+                "length": 40
+            },
+            {
+                "caption": "APB",
+                "cloudvId": "cloudv.io/apb",
+                "provider": "cloudv.io",
+                "affinity": "infrastructure",
+                "type": "BUS",
+                "pos_x": 530,
+                "pos_y": 246,
+                "step": 100,
+                "length": 40
+            },
+            {
+                "caption": "dwarfRV32i",
+                "cloudvId": "cloudv.io/dwarfRV32i",
+                "provider": "cloudv.io",
+                "affinity": "infrastructure",
+                "type": "CPU",
+                "pos_x": 210,
+                "pos_y": 100,
+                "BusConn": {
+                    "orientation": "V"
+                },
+                "editable": [{
+                        "caption": "RF Bank Type",
+                        "name": "RF_Type",
+                        "type": "options",
+                        "options": [{
+                            "name": "single",
+                            "value": "single"
+                        }, {
+                            "name": "dual",
+                            "value": "dual"
+                        }]
+                    },
+                    {
+                        "caption": "Num of Interrupts",
+                        "name": "Num_Int",
+                        "type": "Int"
+                    },
+                    {
+                        "caption": "Clock Source",
+                        "name": "CLK_Src",
+                        "type": "options",
+                        "options": [{
+                            "name": "External",
+                            "value": "external"
+                        }, {
+                            "name": "External XTAL",
+                            "value": "external_xtal"
+                        }, {
+                            "name": "Internal RC",
+                            "value": "internal_rc"
+                        }]
+                    },
+                    {
+                        "caption": "MUL Extension",
+                        "name": "MUL_Ext",
+                        "type": "bool"
+                    }
+                ],
+                "noneditable": {
+                    "Area": 100000,
+                    "GCount": 3500
+                }
+            },
+            {
+                "caption": "Serial FLASH Controller",
+                "cloudvId": "cloudv.io/smctrl",
+                "provider": "cloudv.io",
+                "affinity": "infrastructure",
+                "type": "SMCTRL",
+                "pos_x": 90,
+                "pos_y": 180,
+                "BusConn": {
+                    "orientation": "V"
+                },
+                "editable": [{
+                        "caption": "Flash Type",
+                        "name": "Flash_Type",
+                        "type": "options",
+                        "options": [{
+                            "name": "SPI",
+                            "value": "spi"
+                        }, {
+                            "name": "QSI",
+                            "value": "qsi"
+                        }, {
+                            "name": "QSPI",
+                            "value": "qspi"
+                        }, {
+                            "name": "DSPI",
+                            "value": "dspi"
+                        }]
+                    },
+                    {
+                        "caption": "Base Address",
+                        "name": "BAddr",
+                        "type": "Addr"
+                    }
+                ],
+                "noneditable": {
+                    "Area": 100000,
+                    "GCount": 3500
+                }
+            },
+            {
+                "caption": "SRAM",
+                "cloudvId": "cloudv.io/sram",
+                "provider": "cloudv.io",
+                "affinity": "infrastructure",
+                "type": "SRAM",
+                "pos_x": 210,
+                "pos_y": 280,
+                "BusConn": {
+                    "orientation": "V"
+                },
+                "editable": [{
+                        "caption": "Size (KB)",
+                        "name": "Flash_Type",
+                        "type": "options",
+                        "options": [{
+                            "name": "4",
+                            "value": 4
+                        }, {
+                            "name": "8",
+                            "value": 8
+                        }, {
+                            "name": "16",
+                            "value": 16
+                        }, {
+                            "name": "32",
+                            "value": 32
+                        }]
+                    },
+                    {
+                        "caption": "Base Address",
+                        "name": "BAddr",
+                        "type": "Addr"
+                    }
+                ],
+                "noneditable": {
+                    "Area": 100000,
+                    "GCount": 3500
+                }
+            },
+            {
+                "caption": "AHB to APB Bridge",
+                "cloudvId": "cloudv.io/brdg",
+                "provider": "cloudv.io",
+                "affinity": "infrastructure",
+                "type": "BRDG",
+                "pos_x": 370,
+                "pos_y": 207.5,
+                "BusConn": {
+                    "orientation": "V",
+                    "fromBus": "AHB-Lite",
+                    "toBus": "APB"
+                },
+                "editable": [{
+                    "caption": "Base Address",
+                    "name": "BAddr",
+                    "type": "Addr"
+                }],
+                "noneditable": {
+                    "Area": 100000,
+                    "GCount": 3500
+                }
+            }
+        ]
+    }
+]

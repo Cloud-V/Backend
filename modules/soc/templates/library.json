@@ -1,0 +1,152 @@
+{
+    "format": "SoC_Editor_Lib",
+    "ver": "1.0",
+    "last_updated": "22/10/2017",
+    "digIPs": [{
+            "name": "GPIO",
+            "cloudvId": "cloudv.io/GPIO",
+            "provider": "cloudv.io",
+            "description": "General purpose I/O",
+            "editable": [{
+                    "caption": "Base Address",
+                    "name": "BAddr",
+                    "type": "Addr"
+                },
+                {
+                    "caption": "IRQ Number",
+                    "name": "IRQ_Number",
+                    "type": "Int"
+                },
+                {
+                    "caption": "Size",
+                    "name": "size",
+                    "type": "Int"
+                },
+                {
+                    "caption": "Direction",
+                    "name": "direction",
+                    "type": "options",
+                    "options": [{
+                        "name": "In",
+                        "value": "in"
+                    }, {
+                        "name": "Out",
+                        "value": "out"
+                    }]
+
+                }
+            ],
+            "noneditable": [{
+                    "name": "GCount",
+                    "value": 1000
+                },
+                {
+                    "name": "Area",
+                    "value": 500
+                }
+
+            ]
+        },
+        {
+            "name": "Timer",
+            "cloudvId": "cloudv.io/timer",
+            "provider": "cloudv.io",
+            "description": "Timer/Counter ",
+            "editable": [{
+                    "caption": "Base Address",
+                    "name": "BAddr",
+                    "type": "Addr"
+                },
+                {
+                    "caption": "IRQ Number",
+                    "name": "IRQ_Number",
+                    "type": "Int"
+                },
+                {
+                    "caption": "Size",
+                    "name": "size",
+                    "type": "options",
+                    "options": [{
+                        "name": "8",
+                        "value": "8"
+                    }, {
+                        "name": "16",
+                        "value": "16"
+                    }, {
+                        "name": "32",
+                        "value": "32"
+                    }]
+                }
+            ],
+            "noneditable": [{
+                    "name": "GCount",
+                    "value": 1000
+                },
+                {
+                    "name": "Area",
+                    "value": 500
+                }
+
+            ]
+        }
+
+    ],
+    "commIPs": [{
+            "name": "UART",
+            "cloudvId": "cloudv.io/uart",
+            "provider": "cloudv.io",
+            "description": "Universal Async. Receiver/Transmitter",
+            "editable": [{
+                    "caption": "Base Address",
+                    "name": "BAddr",
+                    "type": "Addr"
+                },
+                {
+                    "caption": "IRQ Number",
+                    "name": "IRQ_Number",
+                    "type": "Int"
+                }
+            ],
+            "noneditable": [{
+                    "name": "GCount",
+                    "value": 1000
+                },
+                {
+                    "name": "Area",
+                    "value": 500
+                }
+
+            ]
+        },
+        {
+            "name": "SPI",
+            "cloudvId": "cloudv.io/spi",
+            "provider": "cloudv.io",
+            "description": "Serial Peripheral Interface (Master)",
+            "editable": [{
+                    "caption": "Base Address",
+                    "name": "BAddr",
+                    "type": "Addr"
+                },
+                {
+                    "caption": "IRQ Number",
+                    "name": "IRQ_Number",
+                    "type": "Int"
+                }
+            ],
+            "noneditable": [{
+                    "name": "GCount",
+                    "value": 1000
+                },
+                {
+                    "name": "Area",
+                    "value": 500
+                }
+
+            ]
+        }
+    ],
+    "anaIPs": [],
+    "otherIPs": [],
+    "User's IPs": []
+}

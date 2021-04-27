@@ -1,0 +1,11 @@
+{
+    "clockMin": 1000,
+    "clockMax": 10000,
+    "outputLoadMin": 20.0,
+    "outputLoadMax": 100.0,
+    "inputDrivingCells": ["BUFFx3", "BUFFx4"],
+    "maxTransitionMin": 100,
+    "maxTransitionMax": 200,
+    "maxFanoutMin": 1,
+    "maxFanoutMax": 10
+}

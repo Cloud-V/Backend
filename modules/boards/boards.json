@@ -1,0 +1,44 @@
+[
+    {
+        "id": "lattice-icestick",
+        "name": "iCEStick",
+        "part": "HX1K144QFP",
+        "fpga": "hx1k",
+        "package": "tq144"
+    },
+    {
+        "id": "lattice-breakout-hx8k",
+        "name": "iCE40-HX8K Breakout Board",
+        "part": "iCE40HX8K-CT256",
+        "fpga": "hx8k",
+        "package": "ct256"
+    },
+    {
+        "id": "goboard-icestick",
+        "name": "Go Board",
+        "part": "HX1K-VQ100",
+        "fpga": "hx1k",
+        "package": "vq100"
+    },
+    {
+        "id": "olimex-hx1k",
+        "name": "Olimex iCE40HX1K-EVB",
+        "part": "HX1K-VQ100",
+        "fpga": "hx1k",
+        "package": "vq100"
+    },
+    {
+        "id": "lattice-ultraplus-up5k",
+        "name": "iCE40 UltraPlus Breakout",
+        "part": "ICE40UP5K-B-EVN",
+        "fpga": "up5k",
+        "package": "sg48"
+    },
+    {
+        "id": "tinyfpga-bx",
+        "name": "TinyFPGA BX",
+        "part": "iCE40-LP8K-CM81",
+        "fpga": "lp8k",
+        "package": "cm81"
+    }
+]

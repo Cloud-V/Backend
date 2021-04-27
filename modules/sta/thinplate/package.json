@@ -1,0 +1,55 @@
+{
+  "name": "thinplate",
+  "version": "0.0.2",
+  "description": "Need to map points and arbitrary numbers? Want to make smooth curves through 2D points? Need to map a 3D surface to some parametric values?  Now you can!",
+  "main": "tps.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "sylvester": "^0.0.21"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node tests/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GMTurbo/tps.git"
+  },
+  "keywords": [
+    "radial-basis-function",
+    "thin-plate-spline",
+    "tps"
+  ],
+  "author": {
+    "name": "Gabe Testa",
+    "email": "gabe.testa@gmail.com",
+    "url": "http://www.github.com/gmturbo"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GMTurbo/tps/issues"
+  },
+  "homepage": "https://github.com/GMTurbo/tps",
+  "_id": "thinplate@0.0.2",
+  "_shasum": "35b1f6951bb785f7c4ef441a4afa76b3d784a080",
+  "_from": "thinplate@0.0.2",
+  "_npmVersion": "1.4.9",
+  "_npmUser": {
+    "name": "gmturbo",
+    "email": "gabe.testa@gmail.com"
+  },
+  "maintainers": [
+    {
+      "name": "gmturbo",
+      "email": "gabe.testa@gmail.com"
+    }
+  ],
+  "dist": {
+    "shasum": "35b1f6951bb785f7c4ef441a4afa76b3d784a080",
+    "tarball": "http://registry.npmjs.org/thinplate/-/thinplate-0.0.2.tgz"
+  },
+  "_resolved": "https://registry.npmjs.org/thinplate/-/thinplate-0.0.2.tgz",
+  "readme": "ERROR: No README data found!"
+}

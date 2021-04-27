@@ -1,0 +1,13 @@
+node_modules
+npm-debug.log
+
+# lambda binaries
+./modules/lambda/bin
+./modules/lambda/lib
+./modules/lambda/node_modules
+../../modules/lambda/*/function/bin/*
+../../modules/lambda/*/function/package-lock.json
+../../modules/lambda/*/*.zip
+./modules/lambda/*/function/bin/*
+./modules/lambda/*/function/package-lock.json
+./modules/lambda/*/*.zip
