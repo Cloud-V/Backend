@@ -1,0 +1,8 @@
+---
+name: CloudVTaskSynthesis
+bin_includes:
+    - yosys
+    - qflow
+    - iverilog
+    - verilator
+

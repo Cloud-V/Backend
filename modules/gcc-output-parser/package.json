@@ -1,0 +1,11 @@
+{
+  "name": "gcc-output-parser",
+  "main": "lib/main.js",
+  "private": true,
+  "optionalDependencies": {},
+  "readme": "ERROR: No README data found!",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spark/gcc-output-parser.git"
+  }
+}

@@ -1,0 +1,4 @@
+---
+name: CloudVTaskCompileRiscV
+bin_includes:
+    - riscv64
