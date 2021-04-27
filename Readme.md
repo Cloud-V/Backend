@@ -5,9 +5,9 @@ It supports simulation, synthesis, creating bitstreams for FPGAs, and much more.
 
 # Before you begin
 Install the following as they are needed by all components of Cloud V:
-* Node 12 with npm. You may want to install it using [tj/n](https://github.com/tj/n)
-* MongoDB
+* Node 14 with npm. You may want to install it using [tj/n](https://github.com/tj/n)
 * yarn
+* MongoDB
 
 Make sure you also have the Frontend ready. The frontend is served statically and is decoupled from the API. It can be found at https://github.com/Cloud-V/Frontend.
 
