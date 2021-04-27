@@ -6,7 +6,6 @@ on:
       - 'v*'
   pull_request:
   workflow_dispatch:
-    
 
 jobs:
   build_backend:
@@ -50,7 +49,11 @@ jobs:
       with:
         name: docker-image
         path: /tmp
-
+        
+    - uses: geekyeggo/delete-artifact@v1
+      with:
+        name: docker-image
+    
     - name: Import Docker Image
       run: docker load --input /tmp/image.tar
       
