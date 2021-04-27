@@ -1,0 +1,67 @@
+name: CI
+on:
+  push:
+  create:
+    tags:
+      - 'v*'
+  pull_request:
+  workflow_dispatch:
+    
+
+jobs:
+  build_backend:
+    name: "Build"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    - name: Build Image
+      run: |
+        docker build -t cloudv/base:latest -f ./docker/base.Dockerfile .
+        docker build -t ${{ secrets.IMAGE_NAME }}:latest -f ./docker/cloudv.Dockerfile . --build-arg ENTRY_POINT=bin/www
+    - name: Export Image
+      run: docker save -o /tmp/image.tar ${{ secrets.IMAGE_NAME }}:latest
+    - name: Upload Docker Image
+      uses: actions/upload-artifact@v2
+      with:
+        name: docker-image
+        path: /tmp/image.tar
+
+  deploy_backend:
+    name: "Deploy Backend"
+    needs: build_backend
+    if: ${{ github.event_name == 'create' }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Download Docker Image
+      uses: actions/download-artifact@v2
+      with:
+        name: docker-image
+        path: /tmp
+
+    - name: Import Docker Image
+      run: docker load --input /tmp/image.tar
+      
+    - name: Push to ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      run: |
+        TAG=$(printf ${{ github.ref }} | cut -d'/' -f3 )
+        docker image tag ${{ secrets.IMAGE_NAME }}:latest $ECR_REGISTRY/$ECR_REPOSITORY:$TAG 
+        docker image tag ${{ secrets.IMAGE_NAME }}:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest 
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+        
