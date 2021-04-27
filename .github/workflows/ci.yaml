@@ -19,7 +19,7 @@ jobs:
         docker build -t cloudv/base:latest -f ./docker/base.Dockerfile .
         docker build -t ${{ secrets.IMAGE_NAME }}:latest -f ./docker/cloudv.Dockerfile . --build-arg ENTRY_POINT=bin/www
     - name: Extract Tag
-      run: bash .github/workflows/get_tag.sh
+      run: bash .github/get_tag.sh
     - name: Configure AWS Credentials
       if: ${{ github.event_name == 'push' && startsWith(env.TAG, 'v') }}
       uses: aws-actions/configure-aws-credentials@v1
