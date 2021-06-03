@@ -400,6 +400,7 @@ router.post("/login", async (req, res, next) => {
 router.get("/logout", async (req, res, next) => {
 	if (
 		req.user != null &&
+		global.userSockets !== undefined &&
 		Array.isArray(global.userSockets[req.user._id.toString()])
 	) {
 		for (let sock of Array.from(
