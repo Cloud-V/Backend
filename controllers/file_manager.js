@@ -50,9 +50,6 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
             if (err === undefined) {
                 return
             }
-            if (err === undefined) {
-                return
-            }
             console.error(err);
             return reject({
                 error: "An error occurred while writing the file."
