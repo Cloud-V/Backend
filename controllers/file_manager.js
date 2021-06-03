@@ -47,6 +47,12 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
         inputStream.pipe(outputSteam);
 
         outputSteam.on("error", function(err) {
+            if (err === undefined) {
+                return
+            }
+            if (err === undefined) {
+                return
+            }
             console.error(err);
             return reject({
                 error: "An error occurred while writing the file."
@@ -98,6 +104,9 @@ const createMediaFile = async ({path, buffer}, metadata, cb) => {
         inputStream.pipe(outputStream);
 
         outputStream.on("error", async err => {
+            if (err === undefined) {
+                return
+            }
             buffer && await fs.unlink(filePath);
             console.error(err);
             return reject({
@@ -166,6 +175,9 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
             inputStream.pipe(outputSteam);
 
             outputSteam.on("error", function(err) {
+                if (err === undefined) {
+                    return
+                }
                 console.error(err);
                 return reject({
                     error: "An error occurred while writing the file."
@@ -264,6 +276,9 @@ const updateFile = (repoEntry, newContent, cb) =>
                 inputStream.pipe(outputSteam);
 
                 outputSteam.on("error", function(err) {
+                    if (err === undefined) {
+                        return
+                    }
                     console.error(err);
                     return cb({
                         error: "An error occurred while writing the file."
@@ -608,6 +623,9 @@ const readFile = async (fsId, cb) => {
         stream.on("data", chunk => (content = content + chunk));
 
         stream.on("error", err => {
+            if (err === undefined) {
+                return
+            }
             console.error(err);
             return reject({
                 error: "Failed to retrieve file content."
