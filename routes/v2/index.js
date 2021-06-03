@@ -53,7 +53,7 @@ const storage = multer.diskStorage({
 				file.originalname,
 				path.extname(file.originalname)
 			)}-${shortid.generate()}-${(req.user || {})._id ||
-				""}-${Date.now()}${path.extname(file.originalname)}`
+			""}-${Date.now()}${path.extname(file.originalname)}`
 		);
 	}
 });
@@ -208,27 +208,27 @@ router.get("/explore", async (req, res, next) => {
 	}
 });
 
-router.get("/about", function(req, res, next) {
+router.get("/about", function (req, res, next) {
 	return res.json(about);
 });
 
-router.get("/tools", function(req, res, next) {
+router.get("/tools", function (req, res, next) {
 	return res.json(tools);
 });
 
-router.get("/privacy", function(req, res, next) {
+router.get("/privacy", function (req, res, next) {
 	return res.json({
 		privacy: turndownService.turndown(privacy)
 	});
 });
 
-router.get("/terms", function(req, res, next) {
+router.get("/terms", function (req, res, next) {
 	return res.json({
 		terms: turndownService.turndown(terms)
 	});
 });
 
-router.post("/bug", restrict, function(req, res, next) {
+router.post("/bug", restrict, function (req, res, next) {
 	const params = req.body;
 
 	if (params.title == null || params.title.trim() === "") {
@@ -243,15 +243,14 @@ router.post("/bug", restrict, function(req, res, next) {
 	}
 
 	const title = `[Bug Report] ${params.title.trim()}`;
-	const body = `The current bug has been reported by @${req.user.username}(${
-		req.user.email
-	}):
+	const body = `The current bug has been reported by @${req.user.username}(${req.user.email
+		}):
 
 ${params.body.trim()}
 \
 `;
 
-	return Mailer.sendEmailFromUser("agiza@cloudv.io", title, body, function(
+	return Mailer.sendEmailFromUser("agiza@cloudv.io", title, body, function (
 		err
 	) {
 		if (err) {
@@ -264,7 +263,7 @@ ${params.body.trim()}
 				"ahmedagiza@aucegypt.edu",
 				title,
 				body,
-				function(err) {
+				function (err) {
 					if (err) {
 						return console.error(err);
 					}
@@ -274,7 +273,7 @@ ${params.body.trim()}
 	});
 });
 
-router.post("/try", async function(req, res, next) {
+router.post("/try", async function (req, res, next) {
 	const logged = req.isAuthenticated() || false;
 	if (logged) {
 		return res.status(400).json({ error: "You are already registered" });
@@ -359,13 +358,13 @@ router.post("/try", async function(req, res, next) {
 	return res.status(200).json({ user: merged, repository });
 });
 
-router.get("/users", function(req, res, next) {
+router.get("/users", function (req, res, next) {
 	const term = req.query.q || "";
 
 	if (term == null || term.length < 3) {
 		return res.json([]);
 	}
-	return User.getSuggestions(term, function(err, suggestions) {
+	return User.getSuggestions(term, function (err, suggestions) {
 		if (err) {
 			return res.status(500).json(err);
 		} else {
@@ -398,8 +397,10 @@ router.post("/login", async (req, res, next) => {
 });
 
 router.get("/logout", async (req, res, next) => {
+
 	if (
 		req.user != null &&
+		global.userSockets !== undefined &&
 		Array.isArray(global.userSockets[req.user._id.toString()])
 	) {
 		for (let sock of Array.from(
@@ -432,6 +433,7 @@ router.post("/signup", async (req, res, next) => {
 
 	try {
 		const { user, token } = await User.createUser(
+
 			_.extend(
 				{
 					username,
@@ -541,7 +543,7 @@ router.post("/edit", restrict, async (req, res, next) => {
 				const sourceImage = await C.loadImage(req.file.path);
 
 				let finalHeight = (DefaultImageWidth / sourceImage.width) * sourceImage.height;
-				let heightOffset = (DefaultImageHeight - finalHeight) / 2 ;
+				let heightOffset = (DefaultImageHeight - finalHeight) / 2;
 
 				context.drawImage(
 					sourceImage,
@@ -594,7 +596,7 @@ router.post("/edit", restrict, async (req, res, next) => {
 			if (!user) {
 				if (req.file) {
 					FileManager.clearMediaFileEntry(updates.avatarFile)
-						.then(() => {})
+						.then(() => { })
 						.catch(console.error);
 				}
 				return res.status(500).json({
@@ -607,7 +609,7 @@ router.post("/edit", restrict, async (req, res, next) => {
 			if (!profile) {
 				if (req.file) {
 					FileManager.clearMediaFileEntry(updates.avatarFile)
-						.then(() => {})
+						.then(() => { })
 						.catch(console.error);
 				}
 				return res.status(500).json({
@@ -632,7 +634,7 @@ router.post("/edit", restrict, async (req, res, next) => {
 
 			if (req.file && currentAvatarFile) {
 				FileManager.clearMediaFileEntry(currentAvatarFile)
-					.then(() => {})
+					.then(() => { })
 					.catch(console.error);
 			}
 			merged.token = req.userToken;
@@ -694,7 +696,7 @@ router.get("/port", async (req, res, next) => {
 	});
 });
 
-router.post("/webhook", function(req, res, next) {
+router.post("/webhook", function (req, res, next) {
 	const { token } = req.query;
 	const { repo } = req.query;
 	if (token != null && repo != null) {
@@ -703,16 +705,16 @@ router.post("/webhook", function(req, res, next) {
 				value: token,
 				repo
 			},
-			function(err, token) {
+			function (err, token) {
 				if (err) {
 					return res.status(500).json(err);
 				}
 				let tempDownloadPath = undefined;
 				let outputBucket = undefined;
 				let outputKey = undefined;
-				const cleanup = function() {
+				const cleanup = function () {
 					if (tempDownloadPath != null) {
-						rmdir(tempDownloadPath, function(err) {
+						rmdir(tempDownloadPath, function (err) {
 							if (err) {
 								return console.error(err);
 							}
@@ -722,7 +724,7 @@ router.post("/webhook", function(req, res, next) {
 						return S3Manager.remove(
 							outputBucket,
 							outputKey,
-							function(err) {
+							function (err) {
 								if (err) {
 									return console.error(err);
 								}
@@ -730,17 +732,17 @@ router.post("/webhook", function(req, res, next) {
 						);
 					}
 				};
-				const cleanupWithFail = function(repo, entry, reportEntry) {
+				const cleanupWithFail = function (repo, entry, reportEntry) {
 					cleanup();
 					if (entry) {
-						entry.setFailed(function(err) {
+						entry.setFailed(function (err) {
 							if (err) {
 								return console.error(err);
 							}
 						});
 					}
 					if (reportEntry) {
-						return reportEntry.setFailed(function(err) {
+						return reportEntry.setFailed(function (err) {
 							if (err) {
 								return console.error(err);
 							}
@@ -751,7 +753,7 @@ router.post("/webhook", function(req, res, next) {
 					{
 						_id: token.repo
 					},
-					function(err, repo) {
+					function (err, repo) {
 						if (err) {
 							cleanup();
 							return res.status(500).json(err);
@@ -766,7 +768,7 @@ router.post("/webhook", function(req, res, next) {
 							{
 								_id: token.entry
 							},
-							function(err, entry) {
+							function (err, entry) {
 								if (err) {
 									cleanup();
 									return res.status(500).json(err);
@@ -780,14 +782,13 @@ router.post("/webhook", function(req, res, next) {
 										{
 											_id: token.reportEntry
 										},
-										function(err, reportEntry) {
+										function (err, reportEntry) {
 											if (err) {
 												console.error(err);
 											}
 											tempDownloadPath = path.join(
 												"temp",
-												`${shortid.generate()}-${shortid.generate()}-${Date.now()}-${
-													repo.owner
+												`${shortid.generate()}-${shortid.generate()}-${Date.now()}-${repo.owner
 												}-${repo._id}-output`
 											);
 											const tempDownloadFile = path.join(
@@ -798,7 +799,7 @@ router.post("/webhook", function(req, res, next) {
 											outputKey = token.resultPath;
 											return fs.mkdir(
 												tempDownloadPath,
-												function(err) {
+												function (err) {
 													if (err) {
 														cleanupWithFail(
 															repo,
@@ -816,7 +817,7 @@ router.post("/webhook", function(req, res, next) {
 															outputBucket,
 															outputKey,
 															tempDownloadFile,
-															function(err) {
+															function (err) {
 																if (err) {
 																	cleanupWithFail(
 																		repo,
@@ -833,7 +834,7 @@ router.post("/webhook", function(req, res, next) {
 																} else {
 																	return fs.readFile(
 																		tempDownloadFile,
-																		function(
+																		function (
 																			err,
 																			content
 																		) {
@@ -896,7 +897,7 @@ router.post("/webhook", function(req, res, next) {
 																				const reportContent =
 																					parsedContent.reportContent ||
 																					"";
-																				const sendNotificationAndLogs = function(
+																				const sendNotificationAndLogs = function (
 																					entry,
 																					reportEntry
 																				) {
@@ -904,7 +905,7 @@ router.post("/webhook", function(req, res, next) {
 																					const repoSockets =
 																						global
 																							.repoSockets[
-																							repo._id.toString()
+																						repo._id.toString()
 																						];
 																					if (
 																						repoSockets !=
@@ -917,11 +918,11 @@ router.post("/webhook", function(req, res, next) {
 																							)) {
 																								if (
 																									repoSocket.socket !=
-																										null &&
+																									null &&
 																									typeof repoSocket
 																										.socket
 																										.emit ===
-																										"function"
+																									"function"
 																								) {
 																									const result = {
 																										synthLog,
@@ -982,7 +983,7 @@ router.post("/webhook", function(req, res, next) {
 																				) {
 																					return entry.updateContent(
 																						synthContent,
-																						function(
+																						function (
 																							err
 																						) {
 																							if (
@@ -1012,7 +1013,7 @@ router.post("/webhook", function(req, res, next) {
 																								) {
 																									return reportEntry.updateContent(
 																										reportContent,
-																										function(
+																										function (
 																											rerr
 																										) {
 																											if (
@@ -1023,7 +1024,7 @@ router.post("/webhook", function(req, res, next) {
 																												);
 																											}
 																											return entry.setReady(
-																												function(
+																												function (
 																													err,
 																													entry
 																												) {
@@ -1052,7 +1053,7 @@ router.post("/webhook", function(req, res, next) {
 																														rerr
 																													) {
 																														return reportEntry.setFailed(
-																															function(
+																															function (
 																																err,
 																																reportEntry
 																															) {
@@ -1080,7 +1081,7 @@ router.post("/webhook", function(req, res, next) {
 																														);
 																													} else {
 																														return reportEntry.setReady(
-																															function(
+																															function (
 																																err,
 																																reportEntry
 																															) {
@@ -1091,7 +1092,7 @@ router.post("/webhook", function(req, res, next) {
 																																		err
 																																	);
 																																	return reportEntry.setFailed(
-																																		function(
+																																		function (
 																																			err,
 																																			reportEntry
 																																		) {
@@ -1145,7 +1146,7 @@ router.post("/webhook", function(req, res, next) {
 																					);
 																				} else {
 																					return entry.setFailed(
-																						function(
+																						function (
 																							err,
 																							entry
 																						) {
@@ -1170,7 +1171,7 @@ router.post("/webhook", function(req, res, next) {
 																									reportEntry
 																								) {
 																									return reportEntry.setFailed(
-																										function(
+																										function (
 																											err,
 																											reportEntry
 																										) {
@@ -1357,12 +1358,12 @@ router.get("/:username", async (req, res, next) => {
 				...(isMe
 					? []
 					: [
-							"admin",
-							"superAdmin",
-							"notificationEndpoints",
-							"allowNotifications",
-							"allowNotificationsPrompted"
-					  ])
+						"admin",
+						"superAdmin",
+						"notificationEndpoints",
+						"allowNotifications",
+						"allowNotificationsPrompted"
+					])
 			])
 		);
 		return res.json(merged);
