@@ -92,7 +92,7 @@ const createUser = async (user = {}, cb) => {
 		.catch(cb);
 };
 
-const createBotUser = function(user, cb) {
+const createBotUser = function (user, cb) {
 	if (typeof user !== "object") {
 		return cb({
 			error: "Invalid user data."
@@ -106,9 +106,9 @@ const createBotUser = function(user, cb) {
 			username: user.username,
 			deleted: false
 		},
-		function(err, existingUser) {
+		function (err, existingUser) {
 			if (err) {
-				console.error(err);
+				console.error('errors: ', err, 1);
 				return cb({
 					error: "An error occurred while creating the user."
 				});
@@ -134,7 +134,7 @@ const createBotUser = function(user, cb) {
 				newUser.type = UserType.Bot;
 				newUser.visible = false;
 
-				return bcrypt.hash(user.password, 10, function(err, hash) {
+				return bcrypt.hash(user.password, 10, function (err, hash) {
 					if (err) {
 						console.error(err);
 						return cb({
@@ -142,7 +142,7 @@ const createBotUser = function(user, cb) {
 						});
 					}
 					newUser.password = hash;
-					return newUser.save(function(err) {
+					return newUser.save(function (err) {
 						if (err) {
 							if (err.code === 11000 || err.code === 11001) {
 								return cb({
@@ -157,9 +157,8 @@ const createBotUser = function(user, cb) {
 								for (let validationPath in err.errors) {
 									const validationError =
 										err.errors[validationPath];
-									errorMessage = `${errorMessage}${
-										validationError.message
-									}\n`;
+									errorMessage = `${errorMessage}${validationError.message
+										}\n`;
 								}
 								if (errorMessage.trim() !== "") {
 									return cb({
@@ -220,14 +219,14 @@ const authUser = async (username, password, cb) =>
 		.then(wrapResolveCallback(cb))
 		.catch(cb);
 
-const authGmail = function(accessToken, refreshToken, profile, cb) {
+const authGmail = function (accessToken, refreshToken, profile, cb) {
 	const userModel = require("../models/user").model;
 	return getIncompleteUser(
 		{
 			"google.id": profile.id,
 			authType: AuthType.Google
 		},
-		function(err, user) {
+		function (err, user) {
 			if (err) {
 				return cb(err);
 			} else if (user) {
@@ -236,7 +235,7 @@ const authGmail = function(accessToken, refreshToken, profile, cb) {
 				} else {
 					// TODO: REFACTOR
 					user.google.token = accessToken;
-					return user.save(function(err, savedUser) {
+					return user.save(function (err, savedUser) {
 						if (err) {
 							console.error(err);
 							return cb({
@@ -258,7 +257,7 @@ const authGmail = function(accessToken, refreshToken, profile, cb) {
 					token: accessToken
 				};
 				newUser.password = shortid.generate();
-				return newUser.save(function(err, savedUser) {
+				return newUser.save(function (err, savedUser) {
 					if (err) {
 						if (err.code === 11000 || err.code === 11001) {
 							return cb({
@@ -273,9 +272,8 @@ const authGmail = function(accessToken, refreshToken, profile, cb) {
 							for (let validationPath in err.errors) {
 								const validationError =
 									err.errors[validationPath];
-								errorMessage = `${errorMessage}${
-									validationError.message
-								}\n`;
+								errorMessage = `${errorMessage}${validationError.message
+									}\n`;
 							}
 							if (errorMessage.trim() !== "") {
 								return cb({
@@ -307,14 +305,14 @@ const authGmail = function(accessToken, refreshToken, profile, cb) {
 /**
  * @deprecated
  */
-const authFacebook = function(accessToken, refreshToken, profile, cb) {
+const authFacebook = function (accessToken, refreshToken, profile, cb) {
 	const userModel = require("../models/user").model;
 	return getIncompleteUser(
 		{
 			"facebook.id": profile.id,
 			authType: AuthType.Facebook
 		},
-		function(err, user) {
+		function (err, user) {
 			if (err) {
 				return cb(err);
 			} else if (user) {
@@ -323,7 +321,7 @@ const authFacebook = function(accessToken, refreshToken, profile, cb) {
 				} else {
 					// TODO: REFACTOR
 					user.facebook.token = accessToken;
-					return user.save(function(err, savedUser) {
+					return user.save(function (err, savedUser) {
 						if (err) {
 							console.error(err);
 							return cb({
@@ -345,7 +343,7 @@ const authFacebook = function(accessToken, refreshToken, profile, cb) {
 					token: accessToken
 				};
 				newUser.password = shortid.generate();
-				return newUser.save(function(err, savedUser) {
+				return newUser.save(function (err, savedUser) {
 					if (err) {
 						if (err.code === 11000 || err.code === 11001) {
 							return cb({
@@ -360,9 +358,8 @@ const authFacebook = function(accessToken, refreshToken, profile, cb) {
 							for (let validationPath in err.errors) {
 								const validationError =
 									err.errors[validationPath];
-								errorMessage = `${errorMessage}${
-									validationError.message
-								}\n`;
+								errorMessage = `${errorMessage}${validationError.message
+									}\n`;
 							}
 							if (errorMessage.trim() !== "") {
 								return cb({
@@ -436,12 +433,12 @@ const completeProfile = (userId, { username }, cb) => {
 		.then(wrapResolveCallback(cb))
 		.catch(cb);
 };
-var getIncompleteUser = function(query, cb) {
+var getIncompleteUser = function (query, cb) {
 	if (query == null) {
 		query = {};
 	}
 	query.deleted = false;
-	return mongoose.model("User").findOne(query, function(err, user) {
+	return mongoose.model("User").findOne(query, function (err, user) {
 		if (err) {
 			console.error(err);
 			return cb({
@@ -601,14 +598,14 @@ const getUsers = async (query, opts = {}, cb) => {
 		.catch(cb);
 };
 
-const cleanupUsers = function(query, cb) {
+const cleanupUsers = function (query, cb) {
 	if (query == null) {
 		query = {};
 	}
 	const Repo = require("./repo");
 	query.deleted = true;
 	const userModel = mongoose.model("User");
-	return userModel.find(query, function(err, users) {
+	return userModel.find(query, function (err, users) {
 		if (err) {
 			return cb(err);
 		} else {
@@ -617,7 +614,7 @@ const cleanupUsers = function(query, cb) {
 					{
 						owner: user._id
 					},
-					function(err) {
+					function (err) {
 						if (err) {
 							return console.error(err);
 						}
@@ -629,7 +626,7 @@ const cleanupUsers = function(query, cb) {
 	});
 };
 
-const getSuggestions = function(term, opts = {}, cb) {
+const getSuggestions = function (term, opts = {}, cb) {
 	const userModel = require("../models/user").model;
 	return new Promise(async (resolve, reject) => {
 		try {
@@ -841,7 +838,7 @@ const forgotPassword = (userId, cb) => {
 		.catch(cb);
 };
 
-const countUsers = function(query, cb) {
+const countUsers = function (query, cb) {
 	if (typeof query !== "object") {
 		return cb({
 			error: "Invalid query."
@@ -1014,6 +1011,7 @@ const getUserProfile = async (query, cb) => {
 				const user = await getUser({
 					_id: userId
 				});
+
 				const defaultUserProfile = await generateDefaultUserProfile(
 					user
 				);
