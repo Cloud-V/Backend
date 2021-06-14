@@ -13,6 +13,7 @@ const express = require("express");
 const shortid = require("shortid");
 
 const { format: urlFormatter } = require("url");
+const { verify } = require('hcaptcha')
 
 const router = express.Router();
 
@@ -202,11 +203,11 @@ router.post('/reset', async (req, res, next) => {
 	try {
 		const tagetUser = await User.getUser({
 			$or: [{
-					username
-				},
-				{
-					email: username
-				}
+				username
+			},
+			{
+				email: username
+			}
 			]
 		});
 		if (!tagetUser) {
@@ -233,75 +234,99 @@ router.post('/reset', async (req, res, next) => {
 
 router.post('/forgot', async (req, res, next) => {
 	const {
-		username
+		username,
+		captcha_token
 	} = req.body;
-	if (!username) {
-		return res.status(400).json({
-			error: 'Bad request'
-		});
+	console.log(req.body)
+	if (!captcha_token) {
+		console.log('error1')
+		return res.status(500).json({ error: 'captcha not done correctly' })
 	}
-	try {
-		const tagetUser = await User.getUser({
-			$or: [{
-					username
-				},
-				{
-					email: username
-				}
-			]
-		});
-		if (!tagetUser) {
-			return res.status(500).json({
-				error: 'User not found'
-			});
-		}
-		const {
-			user,
-			resetToken
-		} = await User.forgotPassword(tagetUser);
-		const profile = await User.getUserProfile({
-			user: user._id
-		});
-		const merged =
-			_.extend(profile.toJSON(),
-				_.omit(user, ['password', 'admin', 'superAdmin']));
 
-		let resetUrl = 'https://cloudv.io';
-		const origin = req.headers.origin;
-		if (config.frontend.host) {
-			resetUrl = urlFormatter({
-				protocol: req.protocol,
-				host: config.frontend.host,
-				pathname: '/reset',
-				query: {
-					username: user.username,
-					resetToken: resetToken.value
-				}
-			});
-		} else if (origin && origin.length) {
-			const parsedURL = new URL(origin);
-			resetUrl = urlFormatter({
-				protocol: req.protocol,
-				host: parsedURL.host,
-				pathname: '/reset',
-				query: {
-					username: user.username,
-					resetToken: resetToken.value
-				}
-			});
-		} else {
-			console.error('Missing URL Configuration');
+	try {
+		let { success } = await verify(process.env.CAPTCHA_SECRET, captcha_token)
+		if (!success) {
+			console.log('error2')
+			return res.status(500).json({ error: 'captcha not done correctly' })
 		}
-		const sentMail = await Mailer.sendResetEmail({
-			user: merged,
-			url: resetUrl
-		});
-		return res.status(200).json({
-			success: 1
-		});
+		try {
+			if (!username) {
+				return res.status(400).json({
+					error: 'Bad request'
+				});
+			}
+			try {
+				const tagetUser = await User.getUser({
+					$or: [{
+						username
+					},
+					{
+						email: username
+					}
+					]
+				});
+				if (!tagetUser) {
+					return res.status(500).json({
+						error: 'User not found'
+					});
+				}
+				const {
+					user,
+					resetToken
+				} = await User.forgotPassword(tagetUser);
+				const profile = await User.getUserProfile({
+					user: user._id
+				});
+				const merged =
+					_.extend(profile.toJSON(),
+						_.omit(user, ['password', 'admin', 'superAdmin']));
+
+				let resetUrl = 'https://cloudv.io';
+				const origin = req.headers.origin;
+				if (config.frontend.host) {
+					resetUrl = urlFormatter({
+						protocol: req.protocol,
+						host: config.frontend.host,
+						pathname: '/reset',
+						query: {
+							username: user.username,
+							resetToken: resetToken.value
+						}
+					});
+				} else if (origin && origin.length) {
+					const parsedURL = new URL(origin);
+					resetUrl = urlFormatter({
+						protocol: req.protocol,
+						host: parsedURL.host,
+						pathname: '/reset',
+						query: {
+							username: user.username,
+							resetToken: resetToken.value
+						}
+					});
+				} else {
+					console.error('Missing URL Configuration');
+				}
+				const sentMail = await Mailer.sendResetEmail({
+					user: merged,
+					url: resetUrl
+				});
+				return res.status(200).json({
+					success: 1
+				});
+			} catch (err) {
+				console.log(err)
+				return res.status(500).json(err);
+			}
+		} catch (err) {
+			console.error(err);
+			return res.status(500).json(err);
+		}
 	} catch (err) {
+		console.error(err);
 		return res.status(500).json(err);
 	}
+
 });
 
 

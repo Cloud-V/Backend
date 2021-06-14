@@ -386,16 +386,33 @@ router.get("/users", function (req, res, next) {
 router.post("/login", async (req, res, next) => {
 	const { body } = req;
 	let loginResult;
+	const { captcha_token } = req.body
+	if (!captcha_token) {
+		console.log('error1')
+		return res.status(500).json({ error: 'captcha not done correctly' })
+	}
 	try {
-		loginResult = await User.login(body);
-	} catch (err) {
+		let { success } = await verify(process.env.CAPTCHA_SECRET, captcha_token)
+		if (!success) {
+			console.log('error2')
+			return res.status(500).json({ error: 'captcha not done correctly' })
+		}
+		try {
+			loginResult = await User.login(body);
+		} catch (err) {
+			return res.status(500).json(err);
+		}
+
+		const { user, token } = loginResult;
+		user.token = token;
+
+		return res.status(200).json(user);
+	}
+	catch (err) {
+		console.error(err);
 		return res.status(500).json(err);
 	}
 
-	const { user, token } = loginResult;
-	user.token = token;
-
-	return res.status(200).json(user);
 });
 
 router.get("/logout", async (req, res, next) => {
