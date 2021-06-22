@@ -237,6 +237,7 @@ const authGmail = function (accessToken, refreshToken, profile, cb) {
 					user.google.token = accessToken;
 					return user.save(function (err, savedUser) {
 						if (err) {
+							console.log("HERE")
 							console.error(err);
 							return cb({
 								error: "Could not update user authentication."
