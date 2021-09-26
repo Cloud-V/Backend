@@ -8,9 +8,9 @@
     "start": "node ./bin/www",
     "proc": "node ./bin/processing-www",
     "cons": "CLOUDV_CONSOLIDATE_PROCESSING=true node ./bin/www",
-    "dev": "IVL_PATH=$(node ./get_ivl_path) CLOUDV_LOCAL_LAMBDA=true CLOUDV_NO_AWS_BATCH=true ./node_modules/nodemon/bin/nodemon.js --async-stack-traces ./bin/www",
-    "proc-dev": "IVL_PATH=$(node ./get_ivl_path) CLOUDV_LOCAL_LAMBDA=true CLOUDV_NO_AWS_BATCH=true ./node_modules/nodemon/bin/nodemon.js --async-stack-traces ./bin/processing-www",
-    "cons-dev": "IVL_PATH=$(node ./get_ivl_path) CLOUDV_LOCAL_LAMBDA=true CLOUDV_NO_AWS_BATCH=true CLOUDV_CONSOLIDATE_PROCESSING=true ./node_modules/nodemon/bin/nodemon.js --async-stack-traces ./bin/www",
+    "dev": "IVL_PATH=$(node ./get_ivl_path) CLOUDV_LOCAL_LAMBDA=true CLOUDV_NO_AWS_BATCH=true CLOUDV_NO_CAPTCHA=true ./node_modules/nodemon/bin/nodemon.js --async-stack-traces ./bin/www",
+    "proc-dev": "IVL_PATH=$(node ./get_ivl_path) CLOUDV_LOCAL_LAMBDA=true CLOUDV_NO_AWS_BATCH=true CLOUDV_NO_CAPTCHA=true ./node_modules/nodemon/bin/nodemon.js --async-stack-traces ./bin/processing-www",
+    "cons-dev": "IVL_PATH=$(node ./get_ivl_path) CLOUDV_LOCAL_LAMBDA=true CLOUDV_NO_AWS_BATCH=true CLOUDV_CONSOLIDATE_PROCESSING=true CLOUDV_NO_CAPTCHA=true ./node_modules/nodemon/bin/nodemon.js --async-stack-traces ./bin/www",
     "build-docker": "docker build -t cloudv/base:latest -f ./docker/base.Dockerfile . && docker build -t cloudv/app:latest -f ./docker/cloudv.Dockerfile . --build-arg ENTRY_POINT=bin/www",
     "mongo-dev": "node -e \"require('fs-extra').ensureDir('./mongo')\" && mongod --dbpath ./mongo"
   },

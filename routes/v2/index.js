@@ -31,7 +31,7 @@ const { minify } = require("html-minifier");
 
 const path = require("path");
 
-const { verify } = require('hcaptcha')
+const verify = require("./verify_captcha");
 
 const { PrivacyType } = repoModel;
 const { EntryType } = repoEntryModel;
@@ -387,15 +387,11 @@ router.post("/login", async (req, res, next) => {
 	const { body } = req;
 	let loginResult;
 	const { captcha_token } = req.body
-	if (!captcha_token) {
-		console.log('error1')
-		return res.status(500).json({ error: 'captcha not done correctly' })
-	}
 	try {
-		let { success } = await verify(process.env.CAPTCHA_SECRET, captcha_token)
+		let { success } = await verify(process.env.CAPTCHA_SECRET, captcha_token);
+		console.log(success);
 		if (!success) {
-			console.log('error2')
-			return res.status(500).json({ error: 'captcha not done correctly' })
+			return res.status(500).json({ error: 'Invalid captcha response.' })
 		}
 		try {
 			loginResult = await User.login(body);
@@ -448,15 +444,10 @@ router.get("/logout", async (req, res, next) => {
 
 router.post("/signup", async (req, res, next) => {
 	const { username, password, email, captcha_token } = req.body;
-	if (!captcha_token) {
-		console.log('error1')
-		return res.status(500).json({ error: 'captcha not done correctly' })
-	}
 	try {
 		let { success } = await verify(process.env.CAPTCHA_SECRET, captcha_token)
 		if (!success) {
-			console.log('error2')
-			return res.status(500).json({ error: 'captcha not done correctly' })
+			return res.status(500).json({ error: 'Invalid captcha response.' })
 		}
 		try {
 			const { user, token } = await User.createUser(

@@ -8,12 +8,13 @@ const Mailer = require("../../modules/mailer");
 
 const User = require("../../controllers/user");
 
+const verify = require("./verify_captcha");
+
 const _ = require("underscore");
 const express = require("express");
 const shortid = require("shortid");
 
 const { format: urlFormatter } = require("url");
-const { verify } = require('hcaptcha')
 
 const router = express.Router();
 
@@ -201,7 +202,7 @@ router.post('/reset', async (req, res, next) => {
 		});
 	}
 	try {
-		const tagetUser = await User.getUser({
+		const targetUser = await User.getUser({
 			$or: [{
 				username
 			},
@@ -210,7 +211,7 @@ router.post('/reset', async (req, res, next) => {
 			}
 			]
 		});
-		if (!tagetUser) {
+		if (!targetUser) {
 			return res.status(500).json({
 				error: 'User not found'
 			});
@@ -218,7 +219,7 @@ router.post('/reset', async (req, res, next) => {
 		const {
 			user,
 			token
-		} = await User.resetPassword(tagetUser, resetToken, password);
+		} = await User.resetPassword(targetUser, resetToken, password);
 		user.token = token;
 		const profile = await User.getUserProfile({
 			user: user._id
@@ -237,17 +238,11 @@ router.post('/forgot', async (req, res, next) => {
 		username,
 		captcha_token
 	} = req.body;
-	console.log(req.body)
-	if (!captcha_token) {
-		console.log('error1')
-		return res.status(500).json({ error: 'captcha not done correctly' })
-	}
 
 	try {
 		let { success } = await verify(process.env.CAPTCHA_SECRET, captcha_token)
 		if (!success) {
-			console.log('error2')
-			return res.status(500).json({ error: 'captcha not done correctly' })
+			return res.status(500).json({ error: 'Invalid captcha response.' });
 		}
 		try {
 			if (!username) {
@@ -256,7 +251,7 @@ router.post('/forgot', async (req, res, next) => {
 				});
 			}
 			try {
-				const tagetUser = await User.getUser({
+				const targetUser = await User.getUser({
 					$or: [{
 						username
 					},
@@ -265,7 +260,7 @@ router.post('/forgot', async (req, res, next) => {
 					}
 					]
 				});
-				if (!tagetUser) {
+				if (!targetUser) {
 					return res.status(500).json({
 						error: 'User not found'
 					});
@@ -273,7 +268,7 @@ router.post('/forgot', async (req, res, next) => {
 				const {
 					user,
 					resetToken
-				} = await User.forgotPassword(tagetUser);
+				} = await User.forgotPassword(targetUser);
 				const profile = await User.getUserProfile({
 					user: user._id
 				});

@@ -1106,7 +1106,7 @@ const login = async ({ username, password }, cb) => {
 		}
 		if (!user) {
 			return reject({
-				error: "Wrong username or password"
+				error: "Incorrect username or password."
 			});
 		}
 		const token = signUser(user);
