@@ -31,6 +31,9 @@ ENV LD_LIBRARY_PATH /opt/bitnami/python/lib/
 
 RUN curl -L https://github.com/Cloud-V/icestorm-builder/releases/download/0.0.2/icestorm.tar.xz | tar -xJC /
 
+## IcarusVerilog
+RUN apt-get install iverilog
+
 # Env Vars
 ENV ARM_GNU_PATH arm-none-eabi
 ENV ICEPACK_PATH icepack

@@ -12,6 +12,7 @@ const { LicenseType } = require("./ip");
 
 const Parser = require("../modules/parser");
 const mongoose = require("../config/db");
+const config = require("../config");
 const { wrapResolveCallback } = require("../modules/utils");
 
 const async = require("async");
@@ -2246,8 +2247,7 @@ repoSchema.methods.createDCF = function(
 		});
 	}
 
-	const stdcellConstrPath = `modules/stdcells-constr/${stdcell}.json`;
-	const thisRepo = this;
+	const stdcellConstrPath = path.join(config.stdcellRepo, stdcell, "constraints.json");
 
 	return fileExists(stdcellConstrPath, (err, exists) => {
 		if (err) {

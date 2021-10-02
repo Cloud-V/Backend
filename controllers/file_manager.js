@@ -1,3 +1,4 @@
+const config = require("../config");
 const mongoose = require("../config/db");
 const dbfs = require("../config/dbfs");
 const Utils = require("../models/utils");
@@ -1096,347 +1097,218 @@ var writeTempSimulationModules = function(
     }
 };
 
-const writeNetlistSimulationModules = (
+const writeNetlistSimulationModules = async (
     repo,
     testbenchId,
     netlistId,
     stdcell,
     simulationTime,
     cb
-) =>
-    repo.getEntry(
-        {
-            _id: testbenchId
-        },
-        function(err, testbenchEntry) {
-            if (err) {
-                return cb(err);
-            } else if (!testbenchEntry) {
-                return cb({
-                    error: "The target file does not exist."
-                });
-            } else if (testbenchEntry.handler !== EntryType.TestbenchFile) {
-                return cb({
-                    error: "The target file is not a testbench file."
-                });
-            } else {
-                const dirName = shortid.generate() + "_" + Date.now();
-                const fullPath = path.join(process.cwd(), `temp/${dirName}`);
-                return fs.mkdir(fullPath, 0o0777, function(err) {
-                    if (err) {
-                        console.error(err);
-                        return cb({
-                            error: "Failed to package the files for compiling."
-                        });
-                    } else {
-                        return repo.getRoot(function(err, rootEntry) {
-                            if (err) {
-                                return cb(err);
-                            } else {
-                            }
-                            return repo.getEntries(
-                                {
-                                    handler: EntryType.Folder
-                                },
-                                function(err, folderEntries) {
-                                    if (err) {
-                                        return cb(err);
-                                    } else {
-                                        const idMap = {};
-                                        idMap[
-                                            rootEntry._id.toString()
-                                        ] = rootEntry;
-                                        folderEntries.forEach(
-                                            folder =>
-                                                (idMap[
-                                                    folder._id.toString()
-                                                ] = folder)
-                                        );
-                                        const folderPaths = {};
-                                        folderPaths[rootEntry._id] = "";
-                                        folderEntries.forEach(function(
-                                            folder,
-                                            ind
-                                        ) {
-                                            let folderPath = `${encodeURIComponent(
-                                                folder.title
-                                            ).replace(/[\(\)]/gm, "\\")}\\`;
-                                            let parentId =
-                                                folder.parent.toString() ===
-                                                rootEntry._id.toString()
-                                                    ? null
-                                                    : folder.parent.toString();
-                                            let parentFolder = idMap[parentId];
-
-                                            while (parentFolder != null) {
-                                                folderPath = `${encodeURIComponent(
-                                                    parentFolder.title
-                                                ).replace(
-                                                    /[\(\)]/gm,
-                                                    "\\"
-                                                )}\\${folderPath}`;
-                                                parentId =
-                                                    parentFolder.parent.toString() ===
-                                                    rootEntry._id.toString()
-                                                        ? null
-                                                        : parentFolder.parent.toString();
-                                                parentFolder = idMap[parentId];
-                                            }
-                                            return (folderPaths[
-                                                folder._id.toString()
-                                            ] = folderPath);
-                                        });
-
-                                        return repo.getEntry(
-                                            {
-                                                _id: netlistId
-                                            },
-                                            function(err, netlistEntry) {
-                                                if (err) {
-                                                    return cb(err);
-                                                } else {
-                                                    const fileNames = {};
-                                                    const reverseMap = {};
-                                                    let dumpName = "";
-                                                    const verilogEntries = [
-                                                        netlistEntry
-                                                    ];
-                                                    verilogEntries.push(
-                                                        testbenchEntry
-                                                    );
-                                                    return async.each(
-                                                        verilogEntries,
-                                                        function(
-                                                            entry,
-                                                            callback
-                                                        ) {
-                                                            const fileName = `${
-                                                                folderPaths[
-                                                                    entry.parent
-                                                                ]
-                                                            }${encodeURIComponent(
-                                                                entry.title
-                                                            )}`;
-
-                                                            fileNames[
-                                                                entry._id
-                                                            ] = {
-                                                                tempName: fileName,
-                                                                sourceName:
-                                                                    entry.title
-                                                            };
-
-                                                            reverseMap[
-                                                                fileName
-                                                            ] = {
-                                                                sourceName:
-                                                                    entry.title,
-                                                                sourceId:
-                                                                    entry._id
-                                                            };
-
-                                                            return getFileContent(
-                                                                entry,
-                                                                function(
-                                                                    readErr,
-                                                                    content
-                                                                ) {
-                                                                    if (
-                                                                        readErr
-                                                                    ) {
-                                                                        return callback(
-                                                                            readErr
-                                                                        );
-                                                                    } else {
-                                                                        if (
-                                                                            entry ===
-                                                                            testbenchEntry
-                                                                        ) {
-                                                                            //TODO: Remove comments!
-                                                                            const commentsRegEx = () =>
-                                                                                new RegExp(
-                                                                                    "\\/\\/.*$",
-                                                                                    "gm"
-                                                                                );
-                                                                            const multiCommentsRegEx = () =>
-                                                                                new RegExp(
-                                                                                    "\\/\\*(.|[\\r\\n])*?\\*\\/",
-                                                                                    "gm"
-                                                                                );
-                                                                            content = content
-                                                                                .replace(
-                                                                                    commentsRegEx(),
-                                                                                    ""
-                                                                                )
-                                                                                .replace(
-                                                                                    multiCommentsRegEx(),
-                                                                                    ""
-                                                                                );
-                                                                            content = content.replace(
-                                                                                /\$\s*stop*/,
-                                                                                "$finish()"
-                                                                            );
-                                                                            let moduleRegEx = /([\s\S]*?)(module)([\s\S]+?)(endmodule)([\s\S]*)/gm;
-                                                                            moduleRegEx = /([\s\S]*?)(module)([\s\S]+?)(\([\s\S]*\))?;([\s\S]+?)(endmodule)([\s\S]*)/gm;
-                                                                            const matches = moduleRegEx.exec(
-                                                                                content
-                                                                            );
-                                                                            if (
-                                                                                matches ==
-                                                                                null
-                                                                            ) {
-                                                                                return callback(
-                                                                                    {
-                                                                                        error:
-                                                                                            "The testbench does not contain any module."
-                                                                                    }
-                                                                                );
-                                                                            }
-                                                                            dumpName = `${
-                                                                                testbenchEntry.title
-                                                                            }_${Date.now()}.vcd`;
-                                                                            if (
-                                                                                /\$\s*stop/.test(
-                                                                                    content
-                                                                                )
-                                                                            ) {
-                                                                                return cb(
-                                                                                    {
-                                                                                        error:
-                                                                                            "$stop keyword is prohibited."
-                                                                                    }
-                                                                                );
-                                                                            }
-                                                                            let finishAppend =
-                                                                                "";
-                                                                            finishAppend = `\n#${simulationTime};\n$finish;\n`;
-                                                                            content = `${
-                                                                                matches[1]
-                                                                            }${
-                                                                                matches[2]
-                                                                            } ${
-                                                                                matches[3]
-                                                                            } ${
-                                                                                matches[4]
-                                                                                    ? matches[4]
-                                                                                    : ""
-                                                                            };${
-                                                                                matches[5]
-                                                                            }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(1, ${
-                                                                                matches[3]
-                                                                            }); ${finishAppend}end\n${
-                                                                                matches[6]
-                                                                            }${
-                                                                                matches[7]
-                                                                            }`;
-                                                                        }
-
-                                                                        return fs.writeFile(
-                                                                            `${fullPath}/${fileName}`,
-                                                                            content,
-                                                                            function(
-                                                                                writeErr
-                                                                            ) {
-                                                                                if (
-                                                                                    writeErr
-                                                                                ) {
-                                                                                    console.error(
-                                                                                        writeErr
-                                                                                    );
-                                                                                    return callback(
-                                                                                        {
-                                                                                            error:
-                                                                                                "Failed to package the files for compiling."
-                                                                                        }
-                                                                                    );
-                                                                                } else {
-                                                                                    return callback();
-                                                                                }
-                                                                            }
-                                                                        );
-                                                                    }
-                                                                }
-                                                            );
-                                                        },
-                                                        function(asyncErr) {
-                                                            if (asyncErr) {
-                                                                return cb(
-                                                                    asyncErr
-                                                                );
-                                                            } else {
-                                                                const stdcellPath = `modules/stdcells-models/${stdcell}.v`;
-                                                                const stdCellDest = `${fullPath}/${stdcell}.v`;
-                                                                try {
-                                                                    const stat = fs.lstatSync(
-                                                                        stdcellPath
-                                                                    );
-                                                                } catch (e) {
-                                                                    console.error(
-                                                                        e
-                                                                    );
-                                                                    return cb({
-                                                                        error: `Cannot find the standard cell models for this library ${stdcell}`
-                                                                    });
-                                                                }
-                                                                const done = function(
-                                                                    err
-                                                                ) {
-                                                                    if (err) {
-                                                                        console.error(
-                                                                            err
-                                                                        );
-                                                                        return cb(
-                                                                            {
-                                                                                error:
-                                                                                    "Failed to package the files for compiling."
-                                                                            }
-                                                                        );
-                                                                    } else {
-                                                                        return cb(
-                                                                            null,
-                                                                            fullPath,
-                                                                            fileNames,
-                                                                            reverseMap,
-                                                                            dumpName
-                                                                        );
-                                                                    }
-                                                                };
-                                                                const readStream = fs.createReadStream(
-                                                                    stdcellPath
-                                                                );
-                                                                readStream.on(
-                                                                    "error",
-                                                                    done
-                                                                );
-                                                                const writeStream = fs.createWriteStream(
-                                                                    stdCellDest
-                                                                );
-                                                                writeStream.on(
-                                                                    "error",
-                                                                    done
-                                                                );
-                                                                writeStream.on(
-                                                                    "close",
-                                                                    done
-                                                                );
-                                                                return readStream.pipe(
-                                                                    writeStream
-                                                                );
-                                                            }
-                                                        }
-                                                    );
-                                                }
-                                            }
-                                        );
-                                    }
-                                }
-                            );
-                        });
-                    }
-                });
-            }
+) => {
+    try {
+        let testbenchEntry = await repo.p.getEntry({ _id: testbenchId });
+        if (!testbenchEntry) {
+            throw { error: "The target file does not exist." };
         }
-    );
+
+        if (testbenchEntry.handler !== EntryType.TestbenchFile) {
+            throw { error: "The target file is not a testbench file." };
+        }
+
+        const dirName = shortid.generate() + "_" + Date.now();
+        const fullPath = path.join(process.cwd(), `temp/${dirName}`);
+
+        try {
+            fs.mkdirpSync(fullPath, 0o0777);
+        } catch (err) {
+            console.error(err);
+            throw { error: "Failed to package files for simulation." };
+        }
+
+        let rootEntry = await repo.p.getRoot();
+        let folderEntries = await repo.p.getEntries({ handler: EntryType.Folder });
+
+        const idMap = {};
+        idMap[rootEntry._id.toString()] = rootEntry;
+        folderEntries.forEach(folder =>
+            (idMap[folder._id.toString()] = folder)
+        );
+        const folderPaths = {};
+        folderPaths[rootEntry._id] = "";
+        for (let folder of folderEntries) {
+            let folderPath = `${encodeURIComponent(folder.title).replace(/[\(\)]/gm, "\\")}\\`;
+            let parentId = folder.parent.toString() === rootEntry._id.toString() ?
+                null : folder.parent.toString();
+            let parentFolder = idMap[parentId];
+
+            while (parentFolder) {
+                folderPath = `${encodeURIComponent(parentFolder.title).replace(
+                    /[\(\)]/gm,
+                    "\\"
+                )}\\${folderPath}`;
+
+                parentId =
+                    parentFolder.parent.toString() ===
+                    rootEntry._id.toString()
+                        ? null
+                        : parentFolder.parent.toString();
+                parentFolder = idMap[parentId];
+            }
+
+            folderPaths[folder._id.toString()] = folderPath;
+        }
+
+        let netlistEntry = await repo.p.getEntry({ _id: netlistId });
+        const fileNames = {};
+        const reverseMap = {};
+        let dumpName = "";
+        const verilogEntries = [
+            netlistEntry,
+            testbenchEntry
+        ];
+        verilogEntries.push(testbenchEntry);
+
+        for (let entry of verilogEntries) {
+            let fileName = `${folderPaths[entry.parent]}${encodeURIComponent(entry.title)}`;
+            fileNames[entry._id] = { tempName: fileName, sourceName: entry.title };
+            reverseMap[fileName] = { sourceName: entry.title, sourceId: entry._id };
+            
+            let content = await new Promise((resolve, reject)=> getFileContent(entry, (err, content)=> {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve(content);
+            }));
+
+            if (entry === testbenchEntry) {
+                const commentsRegEx = () => new RegExp("\\/\\/.*$", "gm");
+                const multiCommentsRegEx = () => new RegExp(
+                    "\\/\\*(.|[\\r\\n])*?\\*\\/",
+                    "gm"
+                );
+                content = content.replace(commentsRegEx(), "").replace(
+                    multiCommentsRegEx(),
+                    ""
+                );
+                content = content.replace(
+                    /\$\s*stop*/,
+                    "$finish()"
+                );
+
+                let moduleRegEx = /([\s\S]*?)(module)([\s\S]+?)(\([\s\S]*\))?;([\s\S]+?)(endmodule)([\s\S]*)/gm;
+
+                const matches = moduleRegEx.exec(
+                    content
+                );
+                if (!matches) {
+                    throw { error: "The testbench does not contain any module." };
+                }
+                
+                dumpName = `${testbenchEntry.title}_${Date.now()}.vcd`;
+                if (/\$\s*stop/.test(content)) {
+                    return cb({
+                            error: "The $stop keyword is prohibited."
+                    });
+                }
+                let finishAppend = `\n#${simulationTime};\n$finish;\n`;
+
+
+                content = `${matches[1]
+                }${
+                    matches[2]
+                } ${
+                    matches[3]
+                } ${
+                    matches[4]
+                        ? matches[4]
+                        : ""
+                };${
+                    matches[5]
+                }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(1, ${
+                    matches[3]
+                }); ${finishAppend}end\n${
+                    matches[6]
+                }${
+                    matches[7]
+                }`;
+            }
+
+            await fs.writeFile(
+                `${fullPath}/${fileName}`,
+                content
+            ).catch(err => {
+                console.error(err);
+                throw { error: "Failed to package files for simulation." };
+            })
+        }
+
+
+        const stdcellRepo = config.stdcellRepo;
+        const stdcellPath = path.join(stdcellRepo, stdcell, "models.v");
+        const stdCellDest = `${fullPath}/${stdcell}.v`;
+
+        try {
+            const stat = fs.lstatSync(
+                stdcellPath
+            );
+        } catch (e) {
+            console.error(
+                e
+            );
+            return cb({
+                error: `Cannot find the standard cell models for this library ${stdcell}`
+            });
+        }
+
+        const done = function(
+            err
+        ) {
+            if (err) {
+                console.error(
+                    err
+                );
+                return cb(
+                    {
+                        error:
+                            "Failed to package the files for compiling."
+                    }
+                );
+            } else {
+                return cb(
+                    null,
+                    fullPath,
+                    fileNames,
+                    reverseMap,
+                    dumpName
+                );
+            }
+        };
+        const readStream = fs.createReadStream(
+            stdcellPath
+        );
+        readStream.on(
+            "error",
+            done
+        );
+        const writeStream = fs.createWriteStream(
+            stdCellDest
+        );
+        writeStream.on(
+            "error",
+            done
+        );
+        writeStream.on(
+            "close",
+            done
+        );
+        return readStream.pipe(
+            writeStream
+        );
+
+    } catch (err) {
+        return cb(err);
+    }
+}
 
 const writeTempRepoModules = function(repo, cb) {
     const dirName = shortid.generate() + "_" + Date.now();
@@ -2315,10 +2187,9 @@ const writeNetlistSimulationContainerFiles = (
                                         )
                                     ] = netlist._id;
                                     const stdcellPath = path.join(
-                                        __dirname,
-                                        "..",
-                                        "modules/stdcells-models",
-                                        `${stdcell}.v`
+                                        config.stdcellRepo,
+                                        stdcell,
+                                        "models.v"
                                     );
                                     const stdCellDest = `${sourcePath}/${stdcell}.v`;
                                     try {

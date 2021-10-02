@@ -48,11 +48,12 @@ yarn run build-docker
 Then you can run it using:
 ```sh
 docker run --rm -ti \
-    -e CLOUDV_USERS_URI=mongodb://host.docker.internal:27017/cloudv\
-    -e CLOUDV_FS_URI=mongodb://host.docker.internal:27017/cloudvfs\
+    --net=host\
+    -e CLOUDV_USERS_URI=mongodb://localhost:27017/cloudv\
+    -e CLOUDV_FS_URI=mongodb://localhost:27017/cloudvfs\
     -p 3000:3000\
     cloudv/app:latest\
-    yarn run cons
+    yarn run cons-dev
 ```
 
 You can also run it using the code in your current working directory, albeit very, very slowly.
@@ -64,7 +65,7 @@ docker run --rm -ti \
     -w /var/www/CloudV/cloudv\
     -p 3000:3000\
     cloudv/base:latest\
-    yarn run cons
+    yarn run cons-dev
 ``` 
 
 # Installing Dependencies (Native)

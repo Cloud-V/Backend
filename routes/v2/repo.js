@@ -1495,7 +1495,8 @@ router.get("/boards", restrict, function(req, res, next) {
 		return res.status(500).json(err);
 	});
 });
-router.get("/stdcell", restrict, function(req, res, next) {
+
+router.get("/stdcell", restrict, async function(req, res, next) {
 	//Parameters validation
 	if (req.local.username == null) {
 		return res.status(400).json({
@@ -1513,50 +1514,62 @@ router.get("/stdcell", restrict, function(req, res, next) {
 	const ownerName = req.local.username;
 	const repoName = req.local.reponame.toLowerCase();
 
-	return Repo.accessRepo(ownerName, repoName, userId, next, function(
-		err,
-		result
-	) {
-		if (err) {
-			return res.status(500).json(err);
-		} else {
-			const { repository: repo, accessLevel: role } = result;
-			return repo.isReadable(userId, function(err, readable) {
-				if (!readable) {
-					return next();
-				} else {
-					const stdcellsPath = path.join(
-						process.cwd(),
-						"modules/stdcells"
-					);
-					return fs.readdir(stdcellsPath, function(
-						err,
-						stdcellFiles
-					) {
-						if (err) {
-							console.error(err);
-							return res.status(500).json({
-								error:
-									"An error has occurred while attempting to retrieve the standard cell library."
-							});
-						} else {
-							const stdCellEntries = [];
-							stdcellFiles.forEach(cell =>
-								stdCellEntries.push({
-									id: cell,
-									text: cell,
-									constr: require(`../../modules/stdcells-constr/${cell}.json`)
-								})
-							);
-							return res.status(200).json({
-								stdcell: stdCellEntries
-							});
-						}
-					});
+	try {
+		let accessInfo = await Repo.accessRepo(ownerName, repoName, userId, next);
+		const { repository: repo, accessLevel: role } = accessInfo;
+		let readable = await repo.p.isReadable(userId);
+		if (!readable) {
+			return next();
+		} 
+		
+		let scls = null;
+		try {
+			scls = fs.readdirSync(config.stdcellRepo).filter(entry=> {
+				if (entry.startsWith(".")) {
+					return false;
 				}
+
+				let sclPath = path.join(config.stdcellRepo, entry);
+				let stat = fs.lstatSync(sclPath);
+				if (!stat.isDirectory()) {
+					console.log(entry);
+					return false;
+				}
+
+				return true;
+			});
+		} catch (err) {
+			console.error(err);
+			throw {
+				error: "An error has occurred while attempting to retrieve the standard cell library list."
+			};		
+		}
+
+
+		let result = [];
+		for (let scl of scls) {
+			let constraintsPath = path.join(scl, "constraints.json");
+			let constr = null;
+			if (fs.existsSync(constraintsPath)) {
+				let constraintsStr = fs.readFileSync(constraintsPath, { encoding: "utf8" });
+				constr = JSON.parse(constraintsStr);
+			}
+			result.push({
+				id: scl,
+				text: scl,
+				constr
 			});
 		}
-	});
+
+		return res.status(200).json({
+			stdcell: result
+		});
+
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json(err);
+
+	}
 });
 router.get("/strategies", restrict, function(req, res, next) {
 	//Parameters validation
@@ -3253,7 +3266,7 @@ try {
 					}
 					({ stdcell } = content);
 					delete content.stdcell;
-					const stdcellConstrPath = `modules/stdcells-constr/${stdcell}.json`;
+					const stdcellConstrPath = path.join(config.stdcellRepo, stdcells, "constraints.json");
 					return fileExists(
 						stdcellConstrPath,
 						function(err, exists) {
@@ -4459,10 +4472,7 @@ try {
 							const STA = require("../../modules/sta/static_timing_analysis.js");
 							const stdCellData = "";
 
-							const stdcellPath = path.join(
-								process.cwd(),
-								`modules/stdcells/${stdcell}`
-							);
+							const stdcellPath = path.join(config.stdcellRepo, stdcell, "cells.lib");
 							try {
 								const stat = fs.lstatSync(
 									stdcellPath
@@ -4476,8 +4486,7 @@ try {
 											return res
 												.status(500)
 												.json({
-													error:
-														"An error occurred while reading standard cell libarry file."
+													error: "An error occurred while reading the standard cell lib file."
 												});
 										} else {
 											STAParser = require("../../modules/sta/parser");

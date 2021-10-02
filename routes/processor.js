@@ -1,6 +1,5 @@
 const Repo = require("../controllers/repo");
 const Simulator = require("../modules/simulator");
-const WorkspaceB = require("../modules/workspace-batch");
 const LambdaManager = require("../modules/lambda/manager");
 const requestTimeout = require("../config").docker.timeout * 1000;
 
@@ -20,123 +19,16 @@ router.post("/validate", async (req, res, next) => {
 });
 
 router.post("/synthesize", async (req, res, next) => {
-    if (req.body.synthType !== "async") {
-        try {
-            const result = await LambdaManager.synthesis(req.body);
-            let { reportErr, synthContent, synthLog } = result;
-            return res.status(200).json({
-                reportErr,
-                synthContent,
-                synthLog
-            });
-        } catch (err) {
-            return res.status(500).json(err);
-        }
-    } else {
-        return prepareRepo(req, res, next, function(repo) {
-            if (
-                repo.topModule == null ||
-                repo.topModuleEntry == null ||
-                repo.topModule.trim() === ""
-            ) {
-                return res.status(500).json({
-                    error: "You must set a top module for your project."
-                });
-            }
-            let name = (req.body.name || "netlist").trim();
-            if (name === "") {
-                name = "netlist";
-            }
-            if (name.indexOf(".v", name.length - 2) !== -1) {
-                name = name.substring(0, name.length - 2);
-            }
-            const synthName = `${name}.v`;
-            const overwrite =
-                req.body.overwrite != null ? req.body.overwrite : false;
-            const stdcell = req.body.stdcell != null ? req.body.stdcell : null;
-
-            const synthOptions = {
-                flatten: true,
-                purge: true,
-                proc: true,
-                memorymap: true,
-                clockPeriod: "1",
-                drivingCell: "DFFPOSX1",
-                load: "0.1"
-            };
-
-            const bodyOptions = req.body.options;
-            if (bodyOptions != null) {
-                if (bodyOptions.flatten != null && !bodyOptions.flatten) {
-                    synthOptions.flatten = false;
-                }
-                if (bodyOptions.purge != null && !bodyOptions.purge) {
-                    synthOptions.purge = false;
-                }
-                if (bodyOptions.proc != null && !bodyOptions.proc) {
-                    synthOptions.proc = false;
-                }
-                if (bodyOptions.memorymap != null && !bodyOptions.memorymap) {
-                    synthOptions.memorymap = false;
-                }
-
-                if (bodyOptions.clockPeriod != null) {
-                    if (
-                        !/^[-+]?([0-9]*\.[0-9]+|[0-9]+)$/gim.test(
-                            bodyOptions.clockPeriod
-                        )
-                    ) {
-                        return res.status(500).json({
-                            error: "Invalid value for clock period."
-                        });
-                    }
-                    synthOptions.clockPeriod = bodyOptions.clockPeriod;
-                }
-                if (bodyOptions.load != null) {
-                    if (
-                        !/^[-+]?([0-9]*\.[0-9]+|[0-9]+)$/gim.test(
-                            bodyOptions.load
-                        )
-                    ) {
-                        return res.status(500).json({
-                            error: "Invalid value for cell load."
-                        });
-                    }
-                    synthOptions.load = bodyOptions.load;
-                }
-                if (bodyOptions.drivingCell != null) {
-                    if (!/^\w+$/gim.test(bodyOptions.drivingCell)) {
-                        return res.status(500).json({
-                            error: "Invalid value for driving cell type."
-                        });
-                    }
-                    synthOptions.drivingCell = bodyOptions.drivingCell;
-                }
-            }
-            return WorkspaceB.synthesize(
-                repo,
-                req.body.netlist,
-                req.body.report,
-                stdcell,
-                synthOptions,
-                synthName,
-                function(err, reportErr, synthContent, synthLog) {
-                    if (err) {
-                        return res.status(500).json(err);
-                    } else {
-                        if (err) {
-                            return res.status(500).json(err);
-                        } else {
-                            return res.status(200).json({
-                                reportErr,
-                                synthContent,
-                                synthLog
-                            });
-                        }
-                    }
-                }
-            );
+    try {
+        const result = await LambdaManager.synthesis(req.body);
+        let { reportErr, synthContent, synthLog } = result;
+        return res.status(200).json({
+            reportErr,
+            synthContent,
+            synthLog
         });
+    } catch (err) {
+        return res.status(500).json(err);
     }
 });
 router.post("/bitstream", async (req, res, next) => {

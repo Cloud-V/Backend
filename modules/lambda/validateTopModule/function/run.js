@@ -19,7 +19,7 @@ module.exports = async ({
 		let data = '';
 		try {
 			const commandData = await prepareSynthesis(repository, {
-				stdcell: 'osu018_stdcells.lib',
+				stdcell: 'osu018',
 				synthOptions: {},
 				synthName: 'synth.v',
 				includeTestbenches: false,

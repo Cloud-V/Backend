@@ -4,6 +4,8 @@ const mathjs = require("mathjs");
 const { exec } = require("child_process");
 const stripComments = require("strip-comments");
 
+const config = require("../config");
+
 const IORegex = new RegExp(`
 		(input|output) 
 	\\s*
@@ -80,7 +82,7 @@ const synthesize = function (filesPath, topModule, topModuleEntryId, stdcell, sy
 
 							let stdcellPath = '';
 							if ((stdcell != null) && (stdcell.trim() !== '')) {
-								stdcellPath = path.join(process.cwd(), `modules/stdcells/${stdcell}`);
+								stdcellPath = path.join(config.stdcellRepo, stdcell, 'cells.lib');
 								try {
 									const stat = fs.lstatSync(stdcellPath);
 									const abcPath = stdcellPath;

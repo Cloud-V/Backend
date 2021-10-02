@@ -569,7 +569,7 @@ module.exports.synthesis = async (repository, opts) => {
 			let purgeOpt = [];
 			let procOpt = [];
 			let memorymapOpt = [];
-			const stdcellPath = path.join(__dirname, 'modules/stdcells', `${stdcell}`);
+			const stdcellPath = path.join(config.stdcellRepo, stdcell, "cells.lib");
 			const abcPath = stdcellPath;
 
 			let synthScript = "";
@@ -615,12 +615,13 @@ module.exports.synthesis = async (repository, opts) => {
 
 			if (stdcell != null && stdcell.trim() !== '') {
 				try {
-					const stat = fs.lstatSync(path.join(__dirname, `modules/stdcells/${stdcell}`));
+
+					fs.lstatSync(stdcellPath);
 					stdcellOpt = ["-p", `dfflibmap -liberty ${stdcellPath}`, "-p", `abc -liberty ${abcPath}`];
 				} catch (e) {
 					console.error(e);
 					return reject({
-						error: `Cannot find the standard cell library ${stdcell}`
+						error: `Cannot find the standard cell library ${stdcell}.`
 					});
 				}
 			} else {

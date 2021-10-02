@@ -135,6 +135,9 @@ let docker = {
 	timeout: process.env.CLOUDV_DOCKER_TIMEOUT || 10 * 60
 };
 
+// STDCELL Repo Path
+let stdcellRepo = process.env.STDCELL_REPO_PATH ||  "/Stdcells"
+
 // Commands and Lambda App Paths
 let yosysCommand = process.env.YOSYS_COMMAND || "yosys";
 let iverilogCommand = process.env.IVERILOG_COMMAND || "iverilog";
@@ -239,6 +242,7 @@ let proc = {
 };
 
 module.exports = {
+	stdcellRepo,
 	loggingLevel,
 	usersDBUri,
 	fsDBUri,

@@ -19,6 +19,10 @@ WORKDIR /var/www/CloudV/cloudv/modules/lambda
 RUN sh ./prepare-symlinks.sh
 WORKDIR /var/www/CloudV/cloudv
 
+# Get SCLs
+RUN mkdir -p /Stdcells
+RUN curl -L https://github.com/Cloud-V/Stdcells/tarball/94625cbab33855014d6abed0a554ae4176b61991 | tar --strip-components=1 -xzC /Stdcells
+
 RUN ln -s /var/www/CloudV/cloudv/${ENTRY_POINT} /entry_point
 
 CMD ["node", "/entry_point"]
