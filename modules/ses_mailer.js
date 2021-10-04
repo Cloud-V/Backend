@@ -23,10 +23,8 @@ const sendMail = (template, dest, from = 'noreply@cloudv.io', params = {}) => {
 			ReplyToAddresses: [],
 		};
 
-		console.log(emailParams)
 		try {
 			const data = await new AWS.SES({}).sendTemplatedEmail(emailParams).promise();
-			console.log(data)
 			resolve(data);
 		} catch (err) {
 			console.error('Error', err)

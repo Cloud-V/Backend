@@ -166,7 +166,6 @@ let apps = [
 	new AppInfo("iverilog", "IVERILOG_PATH", "iverilog"),
 	new AppInfo("iverilogVVP", "IVERILOG_VVP_PATH", "vvp"),
 	new AppInfo("yosys", "YOSYS_PATH", "yosys"),
-	new AppInfo("vesta", "VESTA_PATH", "vesta"),
 	new AppInfo("icepack", "ICEPACK_PATH", "icepack"),
 	new AppInfo("icetime", "ICETIME_PATH", "icetime"),
 	new AppInfo("icebox", "ICEBOX_PATH", "icebox"),

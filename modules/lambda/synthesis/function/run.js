@@ -84,27 +84,6 @@ module.exports = async ({
 			} catch (err) {
 				console.error(err);
 			}
-			try {
-				const {
-					stdout: vestaStdout,
-					stderr: vestaStderr
-				} = await wrapRun(commandData.vestaCommand, {
-					cwd: commandData.repoPath
-				});
-				if (vestaStdout && vestaStdout.length) {
-					const matches = /Top \d+ maximum delay paths:\n(.+s)\n/g.exec(vestaStdout);
-					if (matches != null) {
-						reportContent = `Longest Path Summary:\n${matches[1]}\n\nDesign Summary:\n${reportContent}`;
-					}
-					const staRegex = /ABC\s*:\s*\+\s*stime\s*\-p([\s\S]+)ABC\s*:\s*Start-point/gmi;
-					const staExtraction = staRegex.exec(vestaStdout);
-					if (staExtraction) {
-						reportContent = `Static Timing Analysis:\n${staExtraction[1]}\n\n${reportContent}`;
-					}
-				}
-			} catch (err) {
-				console.error(err);
-			}
 			rmdir(commandData.wsPath, (err) => err && console.error(err));
 			rmdir(commandData.buildPath, (err) => err && console.error(err));
 			return resolve({

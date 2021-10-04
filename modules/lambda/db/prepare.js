@@ -21,9 +21,6 @@ const ivlPath = config.appPaths.ivl ||  path.join(defaultBinDir, 'iverilog', 'li
 // Yosys
 const yosysPath = config.appPaths.yosys ||  path.join(defaultBinDir, 'yosys', 'bin', 'yosys');
 
-// Qflow
-const vestaPath = config.appPaths.vesta ||  path.join(defaultBinDir, 'qflow', 'bin', 'vesta');
-
 // Icestorm
 const iceStormDefaultPath = path.join(defaultBinDir, 'icestorm', 'bin');
 
@@ -126,7 +123,6 @@ module.exports.sw = async (repository, opts) => {
 			const makeScript = '';
 			data.compilationOutputPath = outputPath;
 			let makeFileContent = '';
-			console.log(target)
 			if (target === 'arm') {
 
 				makeFileContent = `${gnuVar} ?= ${armGnuPath}
@@ -522,7 +518,8 @@ module.exports.netlistSimulation = async (repository, opts) => {
 }
 
 module.exports.synthesis = async (repository, opts) => {
-	const {
+	let {
+		noStdcell,
 		stdcell,
 		synthOptions,
 		synthName,
@@ -531,6 +528,11 @@ module.exports.synthesis = async (repository, opts) => {
 	const tempId = shortid.generate()
 	const wsPath = `/tmp/ws/${tempId}`;
 	const buildPath = `/tmp/build/${tempId}`
+
+	noStdcell = noStdcell ?? false;
+	if (noStdcell) {
+		stdcell = "dummy";
+	}
 
 	return new Promise(async (resolve, reject) => {
 		if (repository.topModule == null || repository.topModuleEntry == null || repository.topModule.trim() === '') {
@@ -569,8 +571,8 @@ module.exports.synthesis = async (repository, opts) => {
 			let purgeOpt = [];
 			let procOpt = [];
 			let memorymapOpt = [];
-			const stdcellPath = path.join(config.stdcellRepo, stdcell, "cells.lib");
-			const abcPath = stdcellPath;
+
+			let stdcellPath = path.join(config.stdcellRepo, stdcell, "cells.lib");
 
 			let synthScript = "";
 			synthScript = "write_file constraints_file.constr <<EOF";
@@ -588,7 +590,7 @@ module.exports.synthesis = async (repository, opts) => {
 			}
 
 			synthScript = `${synthScript}\ndfflibmap -liberty ${stdcellPath}`;
-			synthScript = `${synthScript}\nabc -D ${synthOptions.clockPeriod != null ? synthOptions.clockPeriod : 1} -constr constraints_file.constr -liberty ${abcPath}`;
+			synthScript = `${synthScript}\nabc -D ${synthOptions.clockPeriod != null ? synthOptions.clockPeriod : 1} -constr constraints_file.constr -liberty ${stdcellPath}`;
 
 			if (synthOptions.purge) {
 				purgeOpt = ["-p", "opt_clean -purge"];
@@ -613,33 +615,30 @@ module.exports.synthesis = async (repository, opts) => {
 			synthScript = `${synthScript}\ntee -o ${reportPath} stat -top ${repository.topModule} -liberty ${stdcellPath}`;
 			synthScript = `${synthScript}\nwrite_verilog -noattr -noexpr ${synthPath}`;
 
-			if (stdcell != null && stdcell.trim() !== '') {
+			if ((stdcell ?? "").trim() === "") {
 				try {
 
 					fs.lstatSync(stdcellPath);
-					stdcellOpt = ["-p", `dfflibmap -liberty ${stdcellPath}`, "-p", `abc -liberty ${abcPath}`];
+					stdcellOpt = ["-p", `dfflibmap -liberty ${stdcellPath}`, "-p", `abc -liberty ${stdcellPath}`];
 				} catch (e) {
 					console.error(e);
 					return reject({
 						error: `Cannot find the standard cell library ${stdcell}.`
 					});
 				}
-			} else {
+			} else if (!noStdcell) {
 				return reject({
 					error: 'Missing standard cell library file.'
 				});
 			}
 
-
-			const vestaCommand = [vestaPath, `${synthPath}`, `${stdcellPath}`];
 			const data = {
 				buildPath,
 				reportName,
 				reportPath,
 				wsPath,
 				synthName,
-				synthPath,
-				vestaCommand
+				synthPath
 			};
 			FileManager.writeSynthesisContainerFiles(repository, includeTestbenches, false, wsPath, function (err, result) {
 				if (err) {

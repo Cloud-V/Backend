@@ -56,11 +56,6 @@ ICESTORM_URL=https://github.com/FPGAwars/toolchain-icestorm/releases/download/v1
 
 unpack icestorm $ICESTORM_URL
 
-# Qflow
-QFLOW_URL=https://github.com/Cloud-V/qflow/releases/download/1.4.87/qflow_1.4.87_linux_amd64.tar.gz
-
-unpack qflow $QFLOW_URL
-
 # GNU/RISC V
 GNU_RV64_URL=https://static.dev.sifive.com/dev-tools/riscv64-unknown-elf-gcc-8.3.0-2020.04.0-x86_64-linux-centos6.tar.gz
 

@@ -892,7 +892,6 @@ try {
 					console.error(err);
 				});
 				if (listResult) {
-					console.log(listResult);
 					let { entry: listEntry } = listResult;
 					list = {
 						parentId:
@@ -1532,7 +1531,6 @@ router.get("/stdcell", restrict, async function(req, res, next) {
 				let sclPath = path.join(config.stdcellRepo, entry);
 				let stat = fs.lstatSync(sclPath);
 				if (!stat.isDirectory()) {
-					console.log(entry);
 					return false;
 				}
 

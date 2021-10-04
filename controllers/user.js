@@ -237,7 +237,6 @@ const authGmail = function (accessToken, refreshToken, profile, cb) {
 					user.google.token = accessToken;
 					return user.save(function (err, savedUser) {
 						if (err) {
-							console.log("HERE")
 							console.error(err);
 							return cb({
 								error: "Could not update user authentication."
@@ -952,7 +951,6 @@ const generateDefaultUserProfile = async (user, cb) => {
 	return new Promise(async (resolve, reject) => {
 		try {
 			const { username } = user;
-			console.log(username);
 			const generatedAvatar = jdenticon.toPng(username, 200);
 			const avatarFile = await FileManager.createMediaFile({ buffer: generatedAvatar }, {
 				user: user._id,

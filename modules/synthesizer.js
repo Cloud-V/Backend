@@ -171,74 +171,11 @@ const synthesize = function (filesPath, topModule, topModuleEntryId, stdcell, sy
 												error: 'Failed to read synthesized file.'
 											});
 										} else {
-											try {
-												//Reporter.synthesisReport content, stdcellPath, (err, report) ->
-												return fs.readFile(reportPath, 'UTF-8', function (err, report) {
-													if (err) {
-														return cb(null, err, content, {
-															errors,
-															warnings,
-															report: ''
-														});
-													} else {
-														cmd = `vesta ${synthPath} ${stdcellPath}`;
-														return exec(cmd, {
-																//cwd: filesPath
-																maxBuffer: 5000 * 1024,
-																timeout: 30000
-															},
-															function (err, stdout, stderr) {
-																if (err) {
-																	console.error(err);
-																	return cb(null, null, content, {
-																		errors,
-																		warnings,
-																		report
-																	});
-																} else if (stdout) {
-																	const matches = /Top \d+ maximum delay paths:\n(.+s)\n/g.exec(stdout);
-																	if (matches != null) {
-																		report = `Longest Path Summary:\n${matches[1]}\n\nDesign Summary:\n${report}`;
-																	}
-																	return cb(null, null, content, {
-																		errors,
-																		warnings,
-																		report
-																	});
-																}
-															});
-													}
-												});
-											} catch (e) {
-												console.error(e);
-												cmd = `vesta ${synthPath} ${stdcellPath}`;
-												return exec(cmd, {
-														//cwd: filesPath
-														maxBuffer: 5000 * 1024,
-														timeout: 30000
-													},
-													function (err, stdout, stderr) {
-														if (err) {
-															console.error(err);
-															return cb(null, null, content, {
-																errors,
-																warnings,
-																report
-															});
-														} else if (stdout) {
-															const matches = /Top \d+ maximum delay paths:\n(.+s)\n/g.exec(stdout);
-															var report = undefined;
-															if (matches != null) {
-																report = `Longest Path Summary:\n${matches[1]}\n\nDesign Summary:\n Failed to generate design summary.`;
-															}
-															return cb(null, null, content, {
-																errors,
-																warnings,
-																report
-															});
-														}
-													});
-											}
+											return cb(null, err, content, {
+												errors,
+												warnings,
+												report: ''
+											});
 										}
 									});
 								});

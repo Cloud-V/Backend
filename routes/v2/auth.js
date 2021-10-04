@@ -244,79 +244,69 @@ router.post('/forgot', async (req, res, next) => {
 		if (!success) {
 			return res.status(500).json({ error: 'Invalid captcha response.' });
 		}
-		try {
-			if (!username) {
-				return res.status(400).json({
-					error: 'Bad request'
-				});
-			}
-			try {
-				const targetUser = await User.getUser({
-					$or: [{
-						username
-					},
-					{
-						email: username
-					}
-					]
-				});
-				if (!targetUser) {
-					return res.status(500).json({
-						error: 'User not found'
-					});
-				}
-				const {
-					user,
-					resetToken
-				} = await User.forgotPassword(targetUser);
-				const profile = await User.getUserProfile({
-					user: user._id
-				});
-				const merged =
-					_.extend(profile.toJSON(),
-						_.omit(user, ['password', 'admin', 'superAdmin']));
-
-				let resetUrl = 'https://cloudv.io';
-				const origin = req.headers.origin;
-				if (config.frontend.host) {
-					resetUrl = urlFormatter({
-						protocol: req.protocol,
-						host: config.frontend.host,
-						pathname: '/reset',
-						query: {
-							username: user.username,
-							resetToken: resetToken.value
-						}
-					});
-				} else if (origin && origin.length) {
-					const parsedURL = new URL(origin);
-					resetUrl = urlFormatter({
-						protocol: req.protocol,
-						host: parsedURL.host,
-						pathname: '/reset',
-						query: {
-							username: user.username,
-							resetToken: resetToken.value
-						}
-					});
-				} else {
-					console.error('Missing URL Configuration');
-				}
-				const sentMail = await Mailer.sendResetEmail({
-					user: merged,
-					url: resetUrl
-				});
-				return res.status(200).json({
-					success: 1
-				});
-			} catch (err) {
-				console.log(err)
-				return res.status(500).json(err);
-			}
-		} catch (err) {
-			console.error(err);
-			return res.status(500).json(err);
+		if (!username) {
+			return res.status(400).json({
+				error: 'Bad request'
+			});
 		}
+		const targetUser = await User.getUser({
+			$or: [{
+				username
+			},
+			{
+				email: username
+			}
+			]
+		});
+		if (!targetUser) {
+			return res.status(500).json({
+				error: 'User not found'
+			});
+		}
+		const {
+			user,
+			resetToken
+		} = await User.forgotPassword(targetUser);
+		const profile = await User.getUserProfile({
+			user: user._id
+		});
+		const merged =
+			_.extend(profile.toJSON(),
+				_.omit(user, ['password', 'admin', 'superAdmin']));
+
+		let resetUrl = 'https://cloudv.io';
+		const origin = req.headers.origin;
+		if (config.frontend.host) {
+			resetUrl = urlFormatter({
+				protocol: req.protocol,
+				host: config.frontend.host,
+				pathname: '/reset',
+				query: {
+					username: user.username,
+					resetToken: resetToken.value
+				}
+			});
+		} else if (origin && origin.length) {
+			const parsedURL = new URL(origin);
+			resetUrl = urlFormatter({
+				protocol: req.protocol,
+				host: parsedURL.host,
+				pathname: '/reset',
+				query: {
+					username: user.username,
+					resetToken: resetToken.value
+				}
+			});
+		} else {
+			console.error('Missing URL Configuration');
+		}
+		const sentMail = await Mailer.sendResetEmail({
+			user: merged,
+			url: resetUrl
+		});
+		return res.status(200).json({
+			success: 1
+		});
 	} catch (err) {
 		console.error(err);
 		return res.status(500).json(err);

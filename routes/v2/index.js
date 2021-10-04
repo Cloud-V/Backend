@@ -389,7 +389,6 @@ router.post("/login", async (req, res, next) => {
 	const { captcha_token } = req.body
 	try {
 		let { success } = await verify(process.env.CAPTCHA_SECRET, captcha_token);
-		console.log(success);
 		if (!success) {
 			return res.status(500).json({ error: 'Invalid captcha response.' })
 		}
