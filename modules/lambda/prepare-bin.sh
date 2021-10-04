@@ -36,11 +36,6 @@ BZ2_LIB_URL=http://http.us.debian.org/debian/pool/main/b/bzip2/libbz2-1.0_1.0.6-
 
 unpack_bz2_lib $BZ2_LIB_URL
 
-# Verilator
-VERILATOR_URL=https://github.com/FPGAwars/toolchain-verilator/releases/download/v1.0.0/toolchain-verilator-linux_x86_64-1.0.0.tar.gz
-
-unpack verilator $VERILATOR_URL
-
 # Icarus Verilog
 IVERILOG_URL=https://github.com/FPGAwars/toolchain-iverilog/releases/download/v1.1.1/toolchain-iverilog-linux_x86_64-1.1.1.tar.gz
 

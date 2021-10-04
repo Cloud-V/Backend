@@ -141,7 +141,6 @@ let stdcellRepo = process.env.STDCELL_REPO_PATH ||  "/Stdcells"
 // Commands and Lambda App Paths
 let yosysCommand = process.env.YOSYS_COMMAND || "yosys";
 let iverilogCommand = process.env.IVERILOG_COMMAND || "iverilog";
-let verilatorCommand = process.env.VERILATOR_COMMAND || "verilator";
 let vvpCommand = process.env.VVP_COMMAND || "vvp";
 
 class AppInfo {
@@ -162,7 +161,6 @@ class AppInfo {
 
 let apps = [
 	new AppInfo("ivl", "IVL_PATH", null),
-	new AppInfo("verilator", "VERILATOR_PATH", "verilator"),
 	new AppInfo("iverilog", "IVERILOG_PATH", "iverilog"),
 	new AppInfo("iverilogVVP", "IVERILOG_VVP_PATH", "vvp"),
 	new AppInfo("yosys", "YOSYS_PATH", "yosys"),
@@ -260,7 +258,6 @@ module.exports = {
 	cookieMaxAge,
 	yosysCommand,
 	iverilogCommand,
-	verilatorCommand,
 	vvpCommand,
 	appPaths,
 	webhook,

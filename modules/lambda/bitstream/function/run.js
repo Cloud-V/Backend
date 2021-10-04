@@ -17,28 +17,6 @@ module.exports = async ({
 				pcfId
 			});
 
-			/*const {
-				stdout: verilatorStdout,
-				stderr: verilatorStderr
-			} = await wrapRun(commandData.verilatorValidationCommand, {
-				cwd: commandData.repoPath
-			});
-
-			const {
-				errors: validationErrors,
-				warnings: validationWanrings
-			} = await processVerilatorValidation(verilatorStdout, verilatorStderr, commandData);
-			if (validationErrors.length > 0) {
-				rmdir(commandData.wsPath, (err) => err && console.error(err));
-				rmdir(commandData.buildPath, (err) => err && console.error(err));
-				return resolve({
-					synthLog: {
-						errors: validationErrors,
-						warnings: validationWanrings
-					},
-					bitstreamContent: ''
-				});
-			}*/
 			const validationErrors = [];
 			const validationWanrings = [];
 

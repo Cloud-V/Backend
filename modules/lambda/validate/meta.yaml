@@ -2,4 +2,3 @@
 name: CloudVTaskValidate
 bin_includes:
     - iverilog
-    - verilator

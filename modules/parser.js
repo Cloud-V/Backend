@@ -1,4 +1,29 @@
+// Utilities Based On Parsing Verilog
 const {	wrapResolveCallback } = require("./utils");
+
+const stripComments = require("strip-comments");
+
+const ModuleRegex = /^\s*module\s+(.+?)\s*(#\s*\(([\s\S]+?)\)\s*)??\s*((\([\s\S]*?\))?\s*;)\s*$/m;
+
+const extractModules = function (content) {
+	content = stripComments(content);
+
+	let matches = [...content.matchAll(ModuleRegex)];
+
+	let moduleNames = matches.map(match=> match[1]);
+
+	return moduleNames;
+};
+
+const moduleExists = function (content, _module) { // I hate calling the second parameter _module, but module is kind of a special variable
+	let moduleNames = extractModules(content);
+	for (let moduleName of moduleNames) {
+		if (moduleName === _module) {
+			return true;
+		}
+	}
+	return false;
+};
 
 const moduleExistsInFile = function (entryId, module, cb) {
 	return new Promise(async (resolve, reject) => {
@@ -27,44 +52,10 @@ const moduleExistsInFile = function (entryId, module, cb) {
 };
 
 
-var moduleExists = function (content, module) {
-	const commentsRegEx = () => new RegExp('\\/\\/.*$', 'gm');
-	const multiCommentsRegEx = () => new RegExp('\\/\\*(.|[\\r\\n])*?\\*\\/', 'gm');
-	const moduleRegEx = () => new RegExp('^\\s*module\\s+(.+?)\\s*(#\\s*\\(([\\s\\S]+?)\\)\\s*)??\\s*((\\([\\s\\S]*?\\))?\\s*;)([\\s\\S]*?)endmodule', 'gm');
 
-	content = content.replace(commentsRegEx(), '').replace(multiCommentsRegEx(), '');
-	const extractionRegEx = moduleRegEx();
-	let moduleMatches = extractionRegEx.exec(content);
-	while (moduleMatches !== null) {
-		const moduleName = moduleMatches[1];
-		if (moduleName === module) {
-			return true;
-		}
-		moduleMatches = extractionRegEx.exec(content);
-	}
-	return false;
-};
-
-const extractModules = function (content) {
-	const commentsRegEx = () => new RegExp('\\/\\/.*$', 'gm');
-	const multiCommentsRegEx = () => new RegExp('\\/\\*(.|[\\r\\n])*?\\*\\/', 'gm');
-	const moduleRegEx = () => new RegExp('^\\s*module\\s+(.+?)\\s*(#\\s*\\(([\\s\\S]+?)\\)\\s*)??\\s*((\\([\\s\\S]*?\\))?\\s*;)\\s*$', 'gm');
-
-	content = content.replace(commentsRegEx(), '').replace(multiCommentsRegEx(), '');
-	const extractionRegEx = moduleRegEx();
-	let moduleMatches = extractionRegEx.exec(content);
-	const moduleNames = [];
-	while (moduleMatches !== null) {
-		if (moduleMatches[1] != null) {
-			moduleNames.push(moduleMatches[1]);
-		}
-		moduleMatches = extractionRegEx.exec(content);
-	}
-	return moduleNames;
-};
 
 module.exports = {
+	extractModules,
 	moduleExists,
-	moduleExistsInFile,
-	extractModules
+	moduleExistsInFile
 };

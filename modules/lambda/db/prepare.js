@@ -10,9 +10,6 @@ const path = require("path");
 
 const defaultBinDir = path.join(__dirname, '..', 'bin');
 
-// Verilator
-const verilatorPath = config.appPaths.verilator ||  path.join(defaultBinDir, 'verilator', 'bin', 'verilator');
-
 // Icarus Verilog
 const iverilogPath = config.appPaths.iverilog ||  path.join(defaultBinDir, 'iverilog', 'bin', 'iverilog');
 const iverilogVVPPath = config.appPaths.iverilogVVP ||  path.join(defaultBinDir, 'iverilog', 'bin', 'vvp');
@@ -364,8 +361,7 @@ module.exports.bitstream = async (repository, opts) => {
 				data.bitstreamMakefile = makeFileContent;
 				data.projectBin = projectName + '.bin';
 				data.bitstreamMakefileName = path.join(sourcePath, `.${shortid.generate()}_${Date.now()}.mk`);
-				data.bitstreamMakefileCommand = [makePath, "-f", data.bitstreamMakefileName];
-				data.verilatorValidationCommand = [verilatorPath, "--bbox-unsup", "--top-module", filePaths.topModule, "--default-language", "1364-2005", "--error-limit", "100", "-Wno-STMTDLY", "--lint-only"].concat(validationFileArgs);
+				data.bitstreamMakefileCommand = [makePath, "-f", data.bitstreamMakefileName];;
 
 				return resolve(data);
 			});
@@ -705,7 +701,6 @@ module.exports.synthesis = async (repository, opts) => {
 				data.synthScriptFileName = path.join(sourcePath, `.${shortid.generate()}_${Date.now()}.synth`);
 				data.synthScriptCommand = [yosysPath, "-s", data.synthScriptFileName];
 				data.iverilogValidationCommand = [iverilogPath, '-B', ivlPath, "-g2005", "-t", "null", "-Wall", "-Wno-timescale"].concat(validationFileArgs);
-				data.verilatorValidationCommand = [verilatorPath, "--bbox-unsup", "--top-module", filePaths.topModule, "--default-language", "1364-2005", "--error-limit", "100", "-Wno-STMTDLY", "--lint-only"].concat(validationFileArgs);
 				return resolve(data);
 			});
 		} catch (err) {

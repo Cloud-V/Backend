@@ -24,7 +24,6 @@ Image Processing
 
 EDA Software
 * **IcarusVerilog**
-* **Verilator**
 * **Yosys**
 * **Icestorm**
 * **Arachne PNR**
@@ -74,13 +73,13 @@ Get [Homebrew](https://brew.sh) and then:
 
 `brew tap riscv/riscv`
 `brew tap ArmMbed/homebrew-formulae`
-`brew install redis pkg-config cairo libffi glib make riscv-tools arm-none-eabi-gcc icarus-verilog verilator yosys`
+`brew install redis pkg-config cairo libffi glib make riscv-tools arm-none-eabi-gcc icarus-verilog yosys`
 
 * You will need to build icestorm and nextpnr-ice40 from scratch.
 * Visit [mongodb.com](https://www.mongodb.com) for instructions on how to install mongodb.
 
 ## Debian-based Linuces
-`sudo apt-get install mongodb redis pkg-config libcairo2-dev libffi-dev iverilog verilator yosys make gcc-arm-none-eabi`
+`sudo apt-get install mongodb redis pkg-config libcairo2-dev libffi-dev iverilog yosys make gcc-arm-none-eabi`
 
 * You will need to build icestorm and nextpnr-ice40 from scratch.
 * Visit [mongodb.com](https://www.mongodb.com) for instructions on how to install mongodb.
