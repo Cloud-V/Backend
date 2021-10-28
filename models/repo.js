@@ -2388,9 +2388,6 @@ repoSchema.methods.createVerilogTestbench = function(
 		});
 	}
 
-	const FileManager = require("../controllers/file_manager");
-	const Synthesizer = require("../modules/synthesizer");
-
 	const thisRepo = this;
 	if (sourceModule) {
 		return this.getEntry(
@@ -2405,7 +2402,7 @@ repoSchema.methods.createVerilogTestbench = function(
 						error: "Source entry does not exist."
 					});
 				} else {
-					return Synthesizer.generateTestbench(
+					return Parser.generateTestbench(
 						sourceModule,
 						sourceEntry,
 						testbenchName,
