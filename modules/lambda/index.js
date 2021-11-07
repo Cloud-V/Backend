@@ -1,4 +1,6 @@
 exports.handler = async (event, context, callback) => {
+    console.log(body);
+    
     let body = event.body || {};
 
     if (typeof body === 'string') {
