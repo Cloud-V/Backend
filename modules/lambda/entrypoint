@@ -1,6 +1,7 @@
 #!/bin/sh
 if [ -z "${AWS_LAMBDA_RUNTIME_API}" ]; then
-    exec /rie /opt/bitnami/node/bin/npx aws-lambda-ric $@
+    echo "Running emulator..."
+    exec /rie node /function/app/node_modules/aws-lambda-ric/bin/index.js $@
 else
-    exec /opt/bitnami/node/bin/npx aws-lambda-ric $@
+    exec node /function/app/node_modules/aws-lambda-ric/bin/index.js $@
 fi     
