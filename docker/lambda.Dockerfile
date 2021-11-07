@@ -21,15 +21,17 @@ RUN useradd -r -u 1001 -g lambda lambda
 RUN mkdir -p /home/lambda
 RUN chown -R lambda:lambda /home/lambda
 
-COPY ./modules/lambda /function
-RUN chown -R lambda:lambda /function
+COPY ./modules/lambda /function/app
+RUN chown -R lambda:lambda /function/app
 
 USER lambda
 
-WORKDIR /function
+WORKDIR /function/app
 RUN yarn
 
 RUN yarn add aws-lambda-ric
 
-ENTRYPOINT [ "sh", "/function/entrypoint" ]
-CMD [ "handler" ] 
+WORKDIR /function
+
+ENTRYPOINT [ "sh", "/function/app/entrypoint" ]
+CMD [ "app.handler" ] 
