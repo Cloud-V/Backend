@@ -4,8 +4,6 @@ rm -rf db/models
 rm -rf db/config
 rm -rf db/modules
 mkdir db/modules
-rm -rf db/modules
-mkdir db/modules
 
 ln -s ../../../models db/models
 ln -s ../../../controllers db/controllers
@@ -15,9 +13,6 @@ ln -s ../../../config db/config
 ln -s ../../../utils.js db/modules
 ln -s ../../../parser.js db/modules
 ln -s ../../../vcd-to-json.js db/modules
-ln -s ../../../stdcells db/modules
-ln -s ../../../stdcells-constr db/modules
-ln -s ../../../stdcells-models db/modules
 ln -s ../../../boards db/modules
 
 # Custom Modules

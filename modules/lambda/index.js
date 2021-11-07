@@ -1,5 +1,7 @@
+const list = require("./list");
+
 exports.handler = async (event, context, callback) => {
-    console.log(body);
+    console.log(event);
     
     let body = event.body || {};
 
@@ -23,8 +25,17 @@ exports.handler = async (event, context, callback) => {
             })
         });
     }
-    
+
     let { subfunction } = body;
+
+    if (!list.includes(subfunction)) {
+        return callback(null, {
+            statusCode: 500,
+            body: JSON.stringify({
+                error: `Unknown subfunction ${subfunction}`
+            })
+        });        
+    }    
 
     let subfunctionHandler = require(`./functions/${subfunction}/index`).handler;
 
