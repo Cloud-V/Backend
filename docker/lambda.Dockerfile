@@ -9,5 +9,5 @@ COPY ./modules/lambda ${FUNCTION_DIR}
 WORKDIR ${FUNCTION_DIR}
 RUN yarn
 
-ENTRYPOINT [ "/usr/local/bin/python", "-m", "awslambdaric" ]
+ENTRYPOINT [ "/opt/bitnami/python/bin/python3", "-m", "awslambdaric" ]
 CMD [ "app.handler" ]
