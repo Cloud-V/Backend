@@ -33,5 +33,8 @@ RUN yarn add aws-lambda-ric
 
 WORKDIR /function
 
+# Install done, return to root (needed to run permissions properly)
+USER root
+
 ENTRYPOINT [ "sh", "/function/app/entrypoint" ]
 CMD [ "app.handler" ] 
