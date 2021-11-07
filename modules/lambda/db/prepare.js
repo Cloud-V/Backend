@@ -521,6 +521,9 @@ module.exports.synthesis = async (repository, opts) => {
 		synthName,
 		includeTestbenches
 	} = opts || {};
+
+	stdcell = stdcell ?? "";
+
 	const tempId = shortid.generate()
 	const wsPath = `/tmp/ws/${tempId}`;
 	const buildPath = `/tmp/build/${tempId}`
@@ -611,21 +614,24 @@ module.exports.synthesis = async (repository, opts) => {
 			synthScript = `${synthScript}\ntee -o ${reportPath} stat -top ${repository.topModule} -liberty ${stdcellPath}`;
 			synthScript = `${synthScript}\nwrite_verilog -noattr -noexpr ${synthPath}`;
 
-			if ((stdcell ?? "").trim() === "") {
-				try {
+			if (!noStdcell) {
+				if (stdcell !== "") {
+					try {
 
-					fs.lstatSync(stdcellPath);
-					stdcellOpt = ["-p", `dfflibmap -liberty ${stdcellPath}`, "-p", `abc -liberty ${stdcellPath}`];
-				} catch (e) {
-					console.error(e);
+						fs.lstatSync(stdcellPath);
+						stdcellOpt = ["-p", `dfflibmap -liberty ${stdcellPath}`, "-p", `abc -liberty ${stdcellPath}`];
+					} catch (e) {
+						console.error(e);
+						return reject({
+							error: `Cannot find the standard cell library ${stdcell}.`
+						});
+					}
+				} else {
 					return reject({
-						error: `Cannot find the standard cell library ${stdcell}.`
+						error: 'No standard cell library provided.'
 					});
 				}
-			} else if (!noStdcell) {
-				return reject({
-					error: 'Missing standard cell library file.'
-				});
+
 			}
 
 			const data = {

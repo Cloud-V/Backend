@@ -1,10 +1,4 @@
-module.exports = [
-    "validate",
-    "validateTopModule",
-    "simulateTestbench",
-    "simulateNetlist",
-    "synthesis",
-    "bitstream",
-    "swArm",
-    "swRiscV"
-];
+const fs = require("fs-extra");
+const path = require("path");
+
+module.exports = fs.readdirSync(path.join(__dirname, "functions"));

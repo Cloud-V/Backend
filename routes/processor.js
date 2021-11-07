@@ -33,7 +33,7 @@ router.post("/synthesize", async (req, res, next) => {
 });
 router.post("/bitstream", async (req, res, next) => {
     try {
-        const result = await LambdaManager.bitstream(req.body, true);
+        const result = await LambdaManager.bitstream(req.body);
         let { bitstreamContent, synthLog } = result;
         return res.status(200).json({
             bitstreamContent,
@@ -48,8 +48,8 @@ router.post("/sw", async (req, res, next) => {
         const target = req.body.target || "arm";
         const result =
             target === "riscv"
-                ? await LambdaManager.swRiscV(req.body, true)
-                : await LambdaManager.swArm(req.body, true);
+                ? await LambdaManager.swRiscV(req.body)
+                : await LambdaManager.swArm(req.body);
         const { hexContent, listContent, compilationLog } = result;
         return res.status(200).json({
             hexContent,

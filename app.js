@@ -72,7 +72,7 @@ const api = {
 
 const processing = {
 	routes: require("./routes/processor"),
-	localLambda: require("./routes/local-lambda")
+	localLambda: require("./modules/lambda/emulator")
 };
 
 const restrict = require("./passport/restrict");

@@ -23,15 +23,3 @@ ln -s ../../../boards db/modules
 # Custom Modules
 ln -s ../../../../modules/mongoose-auto-increment db/modules
 ln -s ../../../../modules/gcc-output-parser db/modules
-
-for func in *
-do
-    if [ "$func" != "db" ] && [ "$func" != "bin" ] && [ "$func" != "lib" ] && [ "$func" != "node_modules" ] && [ -d "$func" ]; then
-        rm -rf "$func/function/db" "$func/function/bin"  "$func/function/lib" "$func/function/node_modules" "$func/function/package.json"
-        ln -s "../../db" "$func/function/db"
-        ln -s "../../bin" "$func/function/bin"
-        ln -s "../../lib" "$func/function/lib"
-        ln -s "../../package.json" "$func/function/package.json"
-        ln -s "../../node_modules" "$func/function/node_modules"
-    fi
-done

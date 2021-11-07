@@ -74,6 +74,9 @@ let batch = {
 
 let lambda = {
 	local: JSON.parse(process.env.CLOUDV_LOCAL_LAMBDA || "false"),
+	name: "CloudVTask",
+
+	// Deprecated: Old Lambda Method (Cringe)
 	urls: {
 		validate: {
 			host: "to2uah0ssi.execute-api.eu-central-1.amazonaws.com",

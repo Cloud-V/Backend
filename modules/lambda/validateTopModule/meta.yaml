@@ -1,4 +1,0 @@
----
-name: CloudVTaskValidateTopModule
-bin_includes:
-    - iverilog

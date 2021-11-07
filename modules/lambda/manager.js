@@ -13,7 +13,7 @@ const AWSConfig = {
     signatureVersion: "v4"
 };
 
-const createLambda = async (functionName, body = {}) => {
+const invokeLambda = async (functionName, body = {}) => {
     const lambda = new AWS.Lambda();
     const params = {
         FunctionName: functionName,
@@ -51,14 +51,17 @@ const createLambda = async (functionName, body = {}) => {
 };
 
 async function executeLambda(endpoint, body, forceLocal=false) {
+    body.subfunction = endpoint;
+
     if (config.lambda.local || forceLocal) {
         return await signedRequest({
             host: config.proc.host,
-            path: urlj("llambda", endpoint),
+            path: urlj("llambda", "run"),
             body: body
         }, "http", false);
     }
-    return await createLambda(config.lambda.urls[endpoint].name, body);
+
+    return await invokeLambda(config.lambda.name, body);
 }
 
 for (let endpoint of list) {
