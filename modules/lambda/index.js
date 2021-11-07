@@ -1,4 +1,4 @@
-exports.handler = (event, context, callback) => {
+exports.handler = async (event, context, callback) => {
     let body = event.body || {};
 
     if (typeof body === 'string') {
@@ -27,4 +27,4 @@ exports.handler = (event, context, callback) => {
     let subfunctionHandler = require(`./functions/${subfunction}/index`).handler;
 
     subfunctionHandler(event, context, callback);
-}
+};

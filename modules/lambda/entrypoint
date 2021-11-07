@@ -1,0 +1,6 @@
+#!/bin/sh
+if [ -z "${AWS_LAMBDA_RUNTIME_API}" ]; then
+    exec /rie /opt/bitnami/node/bin/npx aws-lambda-ric $@
+else
+    exec /opt/bitnami/node/bin/npx aws-lambda-ric $@
+fi     
