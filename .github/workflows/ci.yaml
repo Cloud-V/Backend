@@ -17,7 +17,7 @@ jobs:
     - name: Build Images
       run: |
         docker build -t cloudv/base:latest -f ./docker/base.Dockerfile .
-        docker build -t ${{ secrets.IMAGE_NAME }}:latest -f ./docker/cloudv.Dockerfile . --build-arg ENTRY_POINT=bin/www
+        docker build -t ${{ secrets.IMAGE_NAME }}:latest -f ./docker/cloudv.Dockerfile .
         docker build -t ${{ secrets.LAMBDA_IMAGE_NAME }}:latest -f ./docker/lambda.Dockerfile .
     - name: Get Tag
       if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}

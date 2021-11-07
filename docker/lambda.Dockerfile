@@ -2,7 +2,7 @@ FROM cloudv/base:latest
 
 ARG FUNCTION_DIR="/function"
 
-RUN python3 -m pip install --target ${FUNCTION_DIR}} awslambdaric
+RUN python3 -m pip install --target ${FUNCTION_DIR} awslambdaric
 
 COPY ./modules/lambda ${FUNCTION_DIR}
 
