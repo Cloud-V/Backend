@@ -22,6 +22,7 @@ RUN mkdir -p /function
 
 # Resolve symlinks
 RUN cp -rL /cloudv/modules/lambda /function/app
+RUN cp /cloudv/package.json /cloudv/yarn.lock /function/app
 
 RUN curl -L https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.2/aws-lambda-rie-x86_64 > /function/app/rie
 RUN chmod +x /function/app/rie
