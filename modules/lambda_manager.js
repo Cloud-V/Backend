@@ -1,7 +1,7 @@
-const list = require("./list");
+const list = require("./lambda/list");
 
-const signedRequest = require("../signed_request");
-const config = require("../../config");
+const signedRequest = require("./signed_request");
+const config = require("../config");
 
 const AWS = require("aws-sdk");
 const urlj = require("url-join");
@@ -13,14 +13,14 @@ const AWSConfig = {
     signatureVersion: "v4"
 };
 
-const invokeLambda = async (functionName, body = {}) => {
+const invokeLambda = async (functionName, body) => {
     const lambda = new AWS.Lambda();
     const params = {
         FunctionName: functionName,
         InvocationType: "RequestResponse",
         LogType: "Tail",
         Payload: JSON.stringify({
-            body: typeof body === "object" ? body : JSON.parse(body)
+            body
         })
     };
     return await new Promise(async (resolve, reject) => {
@@ -51,6 +51,34 @@ const invokeLambda = async (functionName, body = {}) => {
 };
 
 async function executeLambda(endpoint, body, forceLocal=false) {
+    if (typeof body === 'string') {
+        try {
+            body = JSON.parse(body);
+        } catch (err) {
+            console.error(err);
+            return callback(null, {
+                statusCode: 500,
+                body: JSON.stringify({
+                    error: 'Invalid request body: String is not valid JSON.'
+                })
+            });
+        }
+    } else if (typeof body !== 'object') {
+        return callback(null, {
+            statusCode: 500,
+            body: JSON.stringify({
+                error: `Invalid request body: Unsupported type '${typeof body}'`
+            })
+        });
+    } else if (body === null) {
+        return callback(null, {
+            statusCode: 500,
+            body: JSON.stringify({
+                error: `Invalid request body: body is null`
+            })
+        }); 
+    }
+
     body.subfunction = endpoint;
 
     if (config.lambda.local || forceLocal) {

@@ -1,6 +1,6 @@
 const Repo = require("../controllers/repo");
 const Simulator = require("../modules/simulator");
-const LambdaManager = require("../modules/lambda/manager");
+const LambdaManager = require("../modules/lambda_manager");
 const requestTimeout = require("../config").docker.timeout * 1000;
 
 const express = require("express");

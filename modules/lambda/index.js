@@ -21,7 +21,7 @@ exports.handler = async (event, context, callback) => {
         return callback(null, {
             statusCode: 500,
             body: JSON.stringify({
-                error: `Invalid request body: Unsupported type '${typeof body}'`
+                error: `Invalid request body: Unsupported type '${typeof body}'.`
             })
         });
     }
@@ -32,7 +32,7 @@ exports.handler = async (event, context, callback) => {
         return callback(null, {
             statusCode: 500,
             body: JSON.stringify({
-                error: `Unknown subfunction ${subfunction}`
+                error: `Unknown subfunction ${subfunction}.`
             })
         });        
     }    
