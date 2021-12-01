@@ -1,3 +1,4 @@
+'use strict';
 const Parser = require("./modules/parser");
 const Board = require("./modules/boards");
 const FileManager = require("./controllers/file_manager");
@@ -11,6 +12,7 @@ const path = require("path");
 // Icarus Verilog
 const iverilogPath = config.appPaths.iverilog;
 const iverilogVVPPath = config.appPaths.iverilogVVP;
+const ivlPath = config.appPaths.ivl;
 
 // Yosys/Icestorm
 const yosysPath = config.appPaths.yosys;
@@ -33,9 +35,6 @@ module.exports.sw = async (repository, opts) => {
 	const tempId = shortid.generate()
 	const wsPath = `/tmp/ws/${tempId}`;
 	const buildPath = `/tmp/build/${tempId}`;
-	const {
-		EntryType
-	} = require("./models/repo_entry");
 
 	return new Promise(async (resolve, reject) => {
 		try {
