@@ -8,37 +8,20 @@ const fs = require("fs-extra");
 
 const path = require("path");
 
-const defaultBinDir = path.join(__dirname, '..', 'bin');
-
 // Icarus Verilog
-const iverilogPath = config.appPaths.iverilog ||  path.join(defaultBinDir, 'iverilog', 'bin', 'iverilog');
-const iverilogVVPPath = config.appPaths.iverilogVVP ||  path.join(defaultBinDir, 'iverilog', 'bin', 'vvp');
-const ivlPath = config.appPaths.ivl ||  path.join(defaultBinDir, 'iverilog', 'lib', 'ivl');
+const iverilogPath = config.appPaths.iverilog;
+const iverilogVVPPath = config.appPaths.iverilogVVP;
 
-// Yosys
-const yosysPath = config.appPaths.yosys ||  path.join(defaultBinDir, 'yosys', 'bin', 'yosys');
-
-// Icestorm
-const iceStormDefaultPath = path.join(defaultBinDir, 'icestorm', 'bin');
-
-const iceYosysPath = config.appPaths.yosys || path.join(iceStormDefaultPath, 'yosys');
-
-const icepackPath = config.appPaths.icepack ||  path.join(iceStormDefaultPath, 'icepack');
-const nextpnrICE40Path = config.appPaths.nextpnr_ice40 || "nextpnr-ice40";
-
-// Deprecated
-const iceboxPath = config.appPaths.icebox ||  path.join(iceStormDefaultPath, 'icebox');
-const icetimePath = config.appPaths.icetime ||  path.join(iceStormDefaultPath, 'icetime');
-const arachnePath = config.appPaths.arachne ||  path.join(iceStormDefaultPath, 'arachne-pnr');
-const iceboxSharePath = config.appPaths.icebox ?
-	path.dirname(iceboxPath) :
-	path.join(defaultBinDir, 'icestorm', 'share', 'icebox')
-	;
+// Yosys/Icestorm
+const yosysPath = config.appPaths.yosys;
+const iceYosysPath = yosysPath;
+const icepackPath = config.appPaths.icepack;
+const nextpnrICE40Path = config.appPaths.nextpnr_ice40;
 	
 // GNU Utils
-const makePath = config.appPaths.make || 'make';
-const armGnuPath = config.appPaths.armGnu ||  path.join(defaultBinDir, 'arm', 'bin', 'arm-none-eabi')
-const riscGnuPath = config.appPaths.riscGnu ||  path.join(defaultBinDir, 'riscv64', 'bin', 'riscv64-unknown-elf')
+const makePath = config.appPaths.make;
+const armGnuPath = config.appPaths.armGnu;
+const riscGnuPath = config.appPaths.riscGnu;
 
 module.exports.sw = async (repository, opts) => {
 	const {

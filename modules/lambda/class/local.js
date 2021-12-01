@@ -1,7 +1,5 @@
 'use strict';
-
-const {handler} = require("..");
-
+const { handler } = require("..");
 
 class Lambda {
     invoke(params, cb) {

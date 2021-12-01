@@ -158,7 +158,7 @@ class AppInfo {
 		if (envPath) {
 			return envPath;
 		};
-		return lambda.local ? this.fallback : null
+		return this.fallback;
 	}
 }
 
@@ -167,14 +167,11 @@ let apps = [
 	new AppInfo("iverilog", "IVERILOG_PATH", "iverilog"),
 	new AppInfo("iverilogVVP", "IVERILOG_VVP_PATH", "vvp"),
 	new AppInfo("yosys", "YOSYS_PATH", "yosys"),
+	new AppInfo("nextpnr_ice40", "NEXTPNR_ICE40_PATH", "nextpnr-ice40"),
 	new AppInfo("icepack", "ICEPACK_PATH", "icepack"),
-	new AppInfo("icetime", "ICETIME_PATH", "icetime"),
-	new AppInfo("icebox", "ICEBOX_PATH", "icebox"),
-	new AppInfo("arachne", "ARACHNE_PATH", "arachne-pnr"), 
 	new AppInfo("make", "MAKE_PATH", "make"),
 	new AppInfo("armGnu", "ARM_GNU_PATH", "arm-none-eabi"),
-	new AppInfo("riscGnu", "RISC_GNU_PATH", "riscv64-unknown-elf" ),
-	new AppInfo("nextpnr_ice40", "NEXTPNR_ICE40_PATH", "nextpnr-ice40" )
+	new AppInfo("riscGnu", "RISC_GNU_PATH", "riscv64-unknown-elf")
 ];
 
 let appPaths = {};

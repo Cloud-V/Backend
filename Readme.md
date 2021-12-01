@@ -101,6 +101,11 @@ Invoke `yarn run cons-dev` to start the API.
 
 * You can also run the basic API and the long-running job manager separately: `npm run dev` and `yarn run dev-proc` in separate terminals.
 
+# Deployment Quirks
+Deployment is automatically done via CI: whenever a new tag is pushed, the built images are pushed to AWS ECR.
+
+It is then your responsibility to shut down any ECS instances so new tasks can be spun up, and to update the lambda image.
+
 # ⚖️ License
 All rights reserved, the American University in Cairo and the Cloud V Project.
 

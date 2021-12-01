@@ -1,1 +1,4 @@
-module.exports = process.env.CLOUDV_LOCAL_LAMBDA === "true" ? require("./local.js") : require("./online.js");
+'use strict';
+const config = require("../../../config");
+
+module.exports = config.lambda.local ? require("./local.js") : require("./online.js");

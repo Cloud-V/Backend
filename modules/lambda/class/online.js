@@ -1,4 +1,5 @@
-const AWS = require("aws-sdk");
+'use strict';
+
 const AWSConfig = {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -6,4 +7,6 @@ const AWSConfig = {
     signatureVersion: "v4"
 };
 
-module.exports = { Lambda: AWS.Lambda };
+const { Lambda } = require("aws-sdk");
+
+module.exports = { Lambda };

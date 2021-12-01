@@ -1,6 +1,6 @@
 const list = require("./lambda/list");
 const config = require("../config");
-const {Lambda} = require("./lambda/class");
+const { Lambda } = require("./lambda/class");
 
 const invokeLambda = async (functionName, body) => {
     const lambda = new Lambda();
@@ -66,7 +66,11 @@ async function executeLambda(endpoint, body) {
     body.subfunction = endpoint;
 
     let result = await invokeLambda(config.lambda.name, body);
-    console.log(result);
+    
+    if (result.error) {
+        throw result;
+    }
+
     return result;
 }
 
