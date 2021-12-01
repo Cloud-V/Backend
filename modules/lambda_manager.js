@@ -1,20 +1,9 @@
 const list = require("./lambda/list");
-
-const signedRequest = require("./signed_request");
 const config = require("../config");
-
-const AWS = require("aws-sdk");
-const urlj = require("url-join");
-
-const AWSConfig = {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION || "eu-central-1",
-    signatureVersion: "v4"
-};
+const {Lambda} = require("./lambda/class");
 
 const invokeLambda = async (functionName, body) => {
-    const lambda = new AWS.Lambda();
+    const lambda = new Lambda();
     const params = {
         FunctionName: functionName,
         InvocationType: "RequestResponse",
@@ -29,17 +18,25 @@ const invokeLambda = async (functionName, body) => {
                 console.error(err);
                 return reject(err);
             }
+
+            console.log(data);
+
             if (!data.Payload) {
                 console.error(data);
                 console.error(new Error("Payload is empty."));
-                return reject({error: "Unexpected response from asynchronous job. Please contact support."});
+                return reject({error: "An internal error has occurred while executing your asynchronous job. Please contact support."});
             }
-
             const parsed = JSON.parse(data.Payload);
 
-            if (!parsed.body) {
+            if ((parsed ?? "") === "") {
                 console.error(data);
-                console.error(new Error("No body."));
+                console.error(new Error(`Parsed payload is empty.`));
+                return reject({error: "An internal error has occurred while executing your asynchronous job. Please contact support."});
+            }
+
+            if ((parsed.body ?? "") === "") {
+                console.error(data);
+                console.error(new Error("Parsed payload lacks a body."));
                 return reject({error: "An internal error has occurred while executing your asynchronous job. Please contact support."});
             }
 
@@ -50,46 +47,27 @@ const invokeLambda = async (functionName, body) => {
     });
 };
 
-async function executeLambda(endpoint, body, forceLocal=false) {
+async function executeLambda(endpoint, body) {
     if (typeof body === 'string') {
         try {
             body = JSON.parse(body);
         } catch (err) {
             console.error(err);
-            return callback(null, {
-                statusCode: 500,
-                body: JSON.stringify({
-                    error: 'Invalid request body: String is not valid JSON.'
-                })
-            });
+            throw { error: 'Invalid request body: String is not valid JSON.' };
         }
     } else if (typeof body !== 'object') {
-        return callback(null, {
-            statusCode: 500,
-            body: JSON.stringify({
-                error: `Invalid request body: Unsupported type '${typeof body}'`
-            })
-        });
+        throw {
+            error: `Invalid request body: Unsupported type '${typeof body}.'`
+        };
     } else if (body === null) {
-        return callback(null, {
-            statusCode: 500,
-            body: JSON.stringify({
-                error: `Invalid request body: body is null`
-            })
-        }); 
+        throw { error: `Invalid request body: body is null.` };
     }
 
     body.subfunction = endpoint;
 
-    if (config.lambda.local || forceLocal) {
-        return await signedRequest({
-            host: config.proc.host,
-            path: urlj("llambda", "run"),
-            body: body
-        }, "http", false);
-    }
-
-    return await invokeLambda(config.lambda.name, body);
+    let result = await invokeLambda(config.lambda.name, body);
+    console.log(result);
+    return result;
 }
 
 for (let endpoint of list) {

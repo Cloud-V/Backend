@@ -1,0 +1,1 @@
+module.exports = process.env.CLOUDV_LOCAL_LAMBDA === "true" ? require("./local.js") : require("./online.js");

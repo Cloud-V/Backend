@@ -71,8 +71,7 @@ const api = {
 }
 
 const processing = {
-	routes: require("./routes/processor"),
-	localLambda: require("./modules/lambda/emulator")
+	routes: require("./routes/processor")
 };
 
 const restrict = require("./passport/restrict");
@@ -185,7 +184,6 @@ app.use(
 
 if (servedComponent === "api") {
 	if (config.consolidatedProcessing) {
-		app.use("/processing/llambda", processing.localLambda);
 		app.use("/processing", processing.routes)
 	}
 

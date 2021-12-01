@@ -1,7 +1,7 @@
 const list = require("./list");
 
-exports.handler = async (event, context, callback) => {
-    console.log(event);
+exports.handler = (event, context, callback) => {
+    console.log(event, context, callback);
     
     let body = event.body || {};
 
