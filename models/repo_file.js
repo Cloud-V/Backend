@@ -1,5 +1,5 @@
 const mongoose = require("../config/db");
-const { Schema }  = require("mongoose");
+const { Schema } = require("mongoose");
 const { ObjectId } = Schema;
 
 const repoFileSchema = new Schema({

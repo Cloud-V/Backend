@@ -182,44 +182,44 @@ const repoEntrySchema = new Schema({
 
 
 repoEntrySchema.path('handler').validate((function (handler) {
-		let needle;
-		return (needle = handler, Array.from(((() => {
-			const result = [];
-			for (let key in EntryType) {
-				const value = EntryType[key];
-				result.push(value);
-			}
-			return result;
-		})())).includes(needle));
-	}),
+	let needle;
+	return (needle = handler, Array.from(((() => {
+		const result = [];
+		for (let key in EntryType) {
+			const value = EntryType[key];
+			result.push(value);
+		}
+		return result;
+	})())).includes(needle));
+}),
 	'Invalid handler.'
 );
 
 repoEntrySchema.path('access').validate((function (access) {
-		let needle;
-		return (needle = access, Array.from(((() => {
-			const result = [];
-			for (let key in EntryAccess) {
-				const value = EntryAccess[key];
-				result.push(value);
-			}
-			return result;
-		})())).includes(needle));
-	}),
+	let needle;
+	return (needle = access, Array.from(((() => {
+		const result = [];
+		for (let key in EntryAccess) {
+			const value = EntryAccess[key];
+			result.push(value);
+		}
+		return result;
+	})())).includes(needle));
+}),
 	'Invalid access type.'
 );
 
 repoEntrySchema.path('source').validate((function (source) {
-		let needle;
-		return (needle = source, Array.from(((() => {
-			const result = [];
-			for (let key in EntrySource) {
-				const value = EntrySource[key];
-				result.push(value);
-			}
-			return result;
-		})())).includes(needle));
-	}),
+	let needle;
+	return (needle = source, Array.from(((() => {
+		const result = [];
+		for (let key in EntrySource) {
+			const value = EntrySource[key];
+			result.push(value);
+		}
+		return result;
+	})())).includes(needle));
+}),
 	'Invalid source type.'
 );
 repoEntrySchema.virtual('isFolder').get(function () {
@@ -299,9 +299,9 @@ repoEntrySchema.methods.moveTo = function (parentId, overwrite, force, cb) {
 		});
 	} else {
 		return Repo.getRepoEntry({
-				_id: parentId,
-				repo: thisParentRepo
-			},
+			_id: parentId,
+			repo: thisParentRepo
+		},
 			function (err, parentEntry) {
 				if (err) {
 					return cb(err);
@@ -323,9 +323,9 @@ repoEntrySchema.methods.moveTo = function (parentId, overwrite, force, cb) {
 					});
 				} else {
 					return Repo.getRepoEntry({
-							title: thisTitle,
-							parent: parentEntry._id
-						},
+						title: thisTitle,
+						parent: parentEntry._id
+					},
 						function (err, existingEntry) {
 							if (err) {
 								return cb(err);
@@ -336,8 +336,8 @@ repoEntrySchema.methods.moveTo = function (parentId, overwrite, force, cb) {
 									});
 								} else {
 									return Repo.getRepoEntry({
-											_id: thisId
-										},
+										_id: thisId
+									},
 										function (err, currentEntry) {
 											if (err || !currentEntry) {
 												return cb(err || {
@@ -365,8 +365,8 @@ repoEntrySchema.methods.moveTo = function (parentId, overwrite, force, cb) {
 
 							} else {
 								return Repo.getRepoEntry({
-										_id: thisId
-									},
+									_id: thisId
+								},
 									function (err, currentEntry) {
 										if (err || !currentEntry) {
 											return cb(err || {
@@ -417,9 +417,9 @@ repoEntrySchema.methods.copyTo = function (parentId, overwrite, force, cb) {
 		});
 	} else {
 		return Repo.getRepoEntry({
-				_id: parentId,
-				repo: thisParentRepo
-			},
+			_id: parentId,
+			repo: thisParentRepo
+		},
 			function (err, parentEntry) {
 				if (err) {
 					return cb(err);
@@ -441,9 +441,9 @@ repoEntrySchema.methods.copyTo = function (parentId, overwrite, force, cb) {
 					});
 				} else {
 					return Repo.getRepoEntry({
-							title: thisTitle,
-							parent: parentEntry._id
-						},
+						title: thisTitle,
+						parent: parentEntry._id
+					},
 						function (err, existingEntry) {
 							if (err) {
 								return cb(err);
@@ -454,8 +454,8 @@ repoEntrySchema.methods.copyTo = function (parentId, overwrite, force, cb) {
 									});
 								} else {
 									return Repo.getRepoEntry({
-											_id: thisId
-										},
+										_id: thisId
+									},
 										function (err, currentEntry) {
 											if (err || !currentEntry) {
 												return cb(err || {
@@ -516,8 +516,8 @@ repoEntrySchema.methods.copyTo = function (parentId, overwrite, force, cb) {
 
 							} else {
 								return Repo.getRepoEntry({
-										_id: thisId
-									},
+									_id: thisId
+								},
 									function (err, currentEntry) {
 										if (err || !currentEntry) {
 											return cb(err || {
@@ -599,9 +599,9 @@ repoEntrySchema.methods.duplicate = function (newname, overwrite, force, cb) {
 		});
 	} else {
 		return Repo.getRepoEntry({
-				title: newname,
-				repo: thisParentRepo
-			},
+			title: newname,
+			repo: thisParentRepo
+		},
 			function (err, existingEntry) {
 				if (err) {
 					return cb(err);
@@ -612,8 +612,8 @@ repoEntrySchema.methods.duplicate = function (newname, overwrite, force, cb) {
 						});
 					} else {
 						return Repo.getRepoEntry({
-								_id: thisId
-							},
+							_id: thisId
+						},
 							function (err, currentEntry) {
 								if (err || !currentEntry) {
 									return cb(err || {
@@ -674,8 +674,8 @@ repoEntrySchema.methods.duplicate = function (newname, overwrite, force, cb) {
 
 				} else {
 					return Repo.getRepoEntry({
-							_id: thisId
-						},
+						_id: thisId
+					},
 						function (err, currentEntry) {
 							if (err || !currentEntry) {
 								return cb(err || {
@@ -768,9 +768,9 @@ repoEntrySchema.methods.renameTo = function (newname, overwrite, force, cb) {
 					}
 				}
 				return Repo.getRepoEntry({
-						title: newname,
-						parent: thisParentRepo
-					},
+					title: newname,
+					parent: thisParentRepo
+				},
 					function (err, existingEntry) {
 						if (err) {
 							return cb(err);
@@ -867,6 +867,7 @@ repoEntrySchema.methods.deleteEntry = async function (force, cb) {
 			}
 		}
 		try {
+			console.error(new Error().stack);
 			const deletedFile = await Repo.deleteRepoEntry(this._id);
 			return resolve(this);
 		} catch (err) {

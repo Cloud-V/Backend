@@ -7,7 +7,9 @@ const { EntryType } = require("../models/repo_entry");
 const _ = require("underscore");
 const fs = require("fs-extra");
 const tmp = require("tmp");
-const Grid = require("gridfs-stream");
+// const Grid = require("gridfs-stream");
+const Grid = require("../gridfs-stream-local/Grid");
+
 const rmdir = require("rimraf");
 const async = require("async");
 const shortid = require("shortid");
@@ -32,22 +34,25 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
             repo: repoEntry.repo,
             user: repoEntry.user,
             repoEntry: repoEntry._id,
+            fileName: fsName,
             baseName: fileData.originalname,
             mimeType: fileData.mimetype,
             encoding: fileData.encoding,
             extension: fileData.extension
         });
-        const gfs = Grid(dbfs.db);
 
+        const gfs = new Grid();
+        console.log("GFS: ", gfs)
         const inputStream = new Readable();
         inputStream.push(content);
         inputStream.push(null);
         const outputSteam = gfs.createWriteStream({
             filename: fsName
         });
+        console.log("outputSteam", outputSteam)
         inputStream.pipe(outputSteam);
 
-        outputSteam.on("error", function(err) {
+        outputSteam.on("error", function (err) {
             if (err === undefined) {
                 return
             }
@@ -57,7 +62,7 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
             });
         });
 
-        return outputSteam.on("close", async file => {
+        outputSteam.on("close", async file => {
             newFileEntry.fsId = file._id;
             try {
                 newFileEntry = await newFileEntry.save();
@@ -71,13 +76,15 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
                 );
             }
         });
+
+        return;
     })
         .then(wrapResolveCallback(cb))
         .catch(cb);
 };
 
 // Buffer takes precedence over path.
-const createMediaFile = async ({path, buffer}, metadata, cb) => {
+const createMediaFile = async ({ path, buffer }, metadata, cb) => {
     const fileModel = require("../models/media_file").model;
     return new Promise(async (resolve, reject) => {
         let filePath = path;
@@ -93,12 +100,14 @@ const createMediaFile = async ({path, buffer}, metadata, cb) => {
             encoding: metadata.encoding,
             extension: metadata.extension
         });
-        const gfs = Grid(dbfs.db);
+
+        const gfs = new Grid();
 
         const inputStream = fs.createReadStream(filePath);
         const outputStream = gfs.createWriteStream({
             filename: fsName
         });
+        console.log("Output Stream: ", outputStream)
         inputStream.pipe(outputStream);
 
         outputStream.on("error", async err => {
@@ -112,7 +121,7 @@ const createMediaFile = async ({path, buffer}, metadata, cb) => {
             });
         });
 
-        return outputStream.on("close", async file => {
+        outputStream.on("close", async file => {
             buffer && await fs.unlink(filePath);
             newFileEntry.fsId = file._id;
             try {
@@ -127,6 +136,7 @@ const createMediaFile = async ({path, buffer}, metadata, cb) => {
                 );
             }
         });
+        return;
     }).then(wrapResolveCallback(cb)).catch(cb);
 };
 
@@ -157,12 +167,14 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
                 repo: copiedItem.repo,
                 user: copiedItem.user,
                 repoEntry: copiedItem._id,
+                fileName: fsName,
                 baseName: fileData.baseName,
                 mimeType: fileData.mimeType,
                 encoding: fileData.encoding,
                 extension: fileData.extension
             });
-            const gfs = Grid(dbfs.db);
+
+            const gfs = new Grid();
 
             const inputStream = new Readable();
             inputStream.push(content);
@@ -172,7 +184,7 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
             });
             inputStream.pipe(outputSteam);
 
-            outputSteam.on("error", function(err) {
+            outputSteam.on("error", function (err) {
                 if (err === undefined) {
                     return
                 }
@@ -212,10 +224,13 @@ const clearFileEntry = async (repoEntry, cb) => {
             if (!fileEntry) {
                 return resolve(true);
             }
+            console.error("Here X")
             await clearFile(fileEntry.fsId);
+            console.error("Here 2X")
             const deletedEntry = await updateFileEntry(fileEntry._id, {
                 deleted: true
             });
+            console.error("Here 3X")
             return resolve(deletedEntry);
         } catch (err) {
             return reject(err);
@@ -224,6 +239,7 @@ const clearFileEntry = async (repoEntry, cb) => {
         .then(wrapResolveCallback(cb))
         .catch(cb);
 };
+
 const clearMediaFileEntry = async (mediaEntry, cb) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -245,12 +261,13 @@ const clearMediaFileEntry = async (mediaEntry, cb) => {
         .then(wrapResolveCallback(cb))
         .catch(cb);
 };
-const updateFile = (repoEntry, newContent, cb) =>
+
+const updateFile = (repoEntry, newContent, cb) => {
     getFileEntry(
         {
             repoEntry: repoEntry._id
         },
-        function(err, fileEntry) {
+        function (err, fileEntry) {
             if (err) {
                 return cb(err);
             } else if (!fileEntry) {
@@ -258,7 +275,8 @@ const updateFile = (repoEntry, newContent, cb) =>
                     error: "File not found!"
                 });
             } else {
-                const gfs = Grid(dbfs.db);
+
+                const gfs = new Grid();
                 const fsName =
                     shortid.generate() +
                     "_" +
@@ -273,7 +291,7 @@ const updateFile = (repoEntry, newContent, cb) =>
                 });
                 inputStream.pipe(outputSteam);
 
-                outputSteam.on("error", function(err) {
+                outputSteam.on("error", function (err) {
                     if (err === undefined) {
                         return
                     }
@@ -283,19 +301,19 @@ const updateFile = (repoEntry, newContent, cb) =>
                     });
                 });
 
-                return outputSteam.on("close", function(file) {
+                outputSteam.on("close", function (file) {
                     const oldFsId = fileEntry.fsId;
-                    return updateFileEntry(
+                    updateFileEntry(
                         fileEntry._id,
                         {
                             fsId: file._id
                         },
-                        function(err, saveEntry) {
+                        function (err, saveEntry) {
                             if (err) {
                                 return cb(err);
                             } else {
                                 cb(null, fileEntry);
-                                return clearFile(oldFsId, function(err) {
+                                return clearFile(oldFsId, function (err) {
                                     if (err) {
                                         return console.error(err);
                                     }
@@ -304,18 +322,20 @@ const updateFile = (repoEntry, newContent, cb) =>
                         }
                     );
                 });
+                return;
             }
         }
     );
+}
 
 var clearFile = async (fsId, cb) => {
     return new Promise(async (resolve, reject) => {
-        const gfs = Grid(dbfs.db);
+        const gfs = new Grid();
         gfs.remove(
             {
                 _id: fsId
             },
-            function(err) {
+            function (err) {
                 if (err) {
                     return reject({
                         error: "Failed to remove the file."
@@ -330,12 +350,13 @@ var clearFile = async (fsId, cb) => {
         .catch(cb);
 };
 
-const checkFileExistence = (repoEntry, cb) =>
+const checkFileExistence = (repoEntry, cb) => {
+    console.log("checkFileExistence")
     getFileEntry(
         {
             repoEntry: repoEntry._id
         },
-        function(err, fileEntry) {
+        function (err, fileEntry) {
             if (err) {
                 return cb(err);
             } else if (!fileEntry) {
@@ -347,14 +368,16 @@ const checkFileExistence = (repoEntry, cb) =>
             }
         }
     );
+}
 
-var fileExists = function(fsId, cb) {
-    const gfs = Grid(dbfs.db);
+var fileExists = function (fsId, cb) {
+
+    const gfs = new Grid();
     return gfs.exist(
         {
             _id: fsId
         },
-        function(err, found) {
+        function (err, found) {
             if (err) {
                 console.error(err);
                 return cb({
@@ -443,7 +466,7 @@ const updateMediaFileEntry = async (entryId, updates, cb) => {
         .catch(cb);
 };
 
-const renameFile = function(repoEntry, newname, cb) {
+const renameFile = function (repoEntry, newname, cb) {
     let baseName = path.basename(newname);
     let extension = path.extname(newname);
     baseName = path.basename(newname, extension);
@@ -452,7 +475,7 @@ const renameFile = function(repoEntry, newname, cb) {
         {
             repoEntry: repoEntry._id
         },
-        function(err, fileEntry) {
+        function (err, fileEntry) {
             if (err) {
                 return cb(err);
             } else if (!fileEntry) {
@@ -466,7 +489,7 @@ const renameFile = function(repoEntry, newname, cb) {
                         baseName,
                         extension
                     },
-                    function(err, updatedFileEntry) {
+                    function (err, updatedFileEntry) {
                         if (err) {
                             return cb(err);
                         } else {
@@ -480,6 +503,7 @@ const renameFile = function(repoEntry, newname, cb) {
 };
 
 const getFileEntry = async (query, opts = {}, cb) => {
+
     if (typeof opts === "function") {
         cb = opts;
         opts = {};
@@ -488,7 +512,19 @@ const getFileEntry = async (query, opts = {}, cb) => {
         query = {};
     }
     query.deleted = false;
+    const dbQuery2 = mongoose.model("RepoFile").find({});
+
+    let tempQuery = await dbQuery2.exec();
+    fs.writeFile(
+        "repoFileEntries.json",
+        JSON.stringify(tempQuery),
+        err => {
+            console.log("Error #010: ", err)
+        }
+    )
+    console.log("await dbQuery.exec():", tempQuery)
     return new Promise(async (resolve, reject) => {
+        console.log("Query:", query)
         const dbQuery = mongoose.model("RepoFile").findOne(query);
         try {
             return resolve(await dbQuery.exec());
@@ -498,8 +534,7 @@ const getFileEntry = async (query, opts = {}, cb) => {
                 error: "An error occurred while retrieving the file entry."
             });
         }
-    })
-        .then(wrapResolveCallback(cb))
+    }).then(wrapResolveCallback(cb))
         .catch(cb);
 };
 const getMediaFileEntry = async (query, opts = {}, cb) => {
@@ -526,13 +561,13 @@ const getMediaFileEntry = async (query, opts = {}, cb) => {
         .catch(cb);
 };
 
-const getFileEntries = function(query, cb) {
+const getFileEntries = function (query, cb) {
     if (query == null) {
         query = {};
     }
     query.deleted = false;
 
-    return mongoose.model("RepoFile").find(query, function(err, fileEntries) {
+    return mongoose.model("RepoFile").find(query, function (err, fileEntries) {
         if (err) {
             console.error(err);
             return cb({
@@ -545,17 +580,25 @@ const getFileEntries = function(query, cb) {
 };
 
 const getFileContent = async (repoEntry, cb) => {
+    console.log("getFileContent")
+    console.log(new Error().stack)
     return new Promise(async (resolve, reject) => {
         try {
+            let tempFileEntry = await getFileEntry({})
+            console.log("Temp File Entry", tempFileEntry)
             const fileEntry = await getFileEntry({
                 repoEntry: repoEntry._id
             });
+            console.log("Repo Entry Id", repoEntry._id)
+            console.log("Repo Entry", repoEntry)
             if (!fileEntry) {
+                console.log("File Entry #020", fileEntry)
                 return reject({
-                    error: "File entry not found!"
+                    error: "File entry not found 2!"
                 });
             }
             const content = await readFile(fileEntry.fsId);
+            console.log("All Content: ", content.toString())
             return resolve(content);
         } catch (err) {
             return reject(err);
@@ -565,6 +608,32 @@ const getFileContent = async (repoEntry, cb) => {
         .catch(cb);
 };
 
+const getFileStream = (repoEntry, cb) => {
+    console.log("getFileStream")
+    getFileEntry(
+        {
+            repoEntry: repoEntry._id
+        },
+        function (err, fileEntry) {
+            if (err) {
+                return cb(err);
+            } else if (!fileEntry) {
+                return cb({
+                    error: "File entry not found!"
+                });
+            } else {
+
+                const gfs = new Grid();
+                const stream = gfs.createReadStream({
+                    _id: fileEntry.fsId
+                });
+                console.log("Stream2: ", fileEntry.fsId)
+                stream.run();
+                return cb(null, stream);
+            }
+        }
+    );
+}
 const getMediaFileStream = (mediaEntry, cb) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -577,10 +646,13 @@ const getMediaFileStream = (mediaEntry, cb) => {
                     error: "Media entry not found"
                 });
             }
-            const gfs = Grid(dbfs.db);
+
+            const gfs = new Grid();
             const stream = gfs.createReadStream({
                 _id: entry.fsId
             });
+            console.log("Stream1: ", entry.fsId)
+            stream.run()
             return resolve(stream);
         } catch (err) {
             return reject(err);
@@ -589,36 +661,22 @@ const getMediaFileStream = (mediaEntry, cb) => {
         .then(wrapResolveCallback(cb))
         .catch(cb);
 };
-const getFileStream = (repoEntry, cb) =>
-    getFileEntry(
-        {
-            repoEntry: repoEntry._id
-        },
-        function(err, fileEntry) {
-            if (err) {
-                return cb(err);
-            } else if (!fileEntry) {
-                return cb({
-                    error: "File entry not found!"
-                });
-            } else {
-                const gfs = Grid(dbfs.db);
-                const stream = gfs.createReadStream({
-                    _id: fileEntry.fsId
-                });
-                return cb(null, stream);
-            }
-        }
-    );
+
 
 const readFile = async (fsId, cb) => {
     return new Promise(async (resolve, reject) => {
-        const gfs = Grid(dbfs.db);
+        // const gfs = Grid(dbfs.db);
+        const gfs = new Grid();
         let content = "";
         const stream = gfs.createReadStream({
             _id: fsId
         });
-        stream.on("data", chunk => (content = content + chunk));
+        console.log("Stream3: ", fsId)
+        stream.on("data", chunk => {
+            content = content + chunk;
+            console.log("Current Chunck: ", chunk.toString())
+        });
+
 
         stream.on("error", err => {
             if (err === undefined) {
@@ -629,21 +687,24 @@ const readFile = async (fsId, cb) => {
                 error: "Failed to retrieve file content."
             });
         });
-        return stream.on("end", () => {
+        stream.on("end", () => {
             if (content == null) {
                 return reject({
                     error: "Failed to retrieve file content."
                 });
             } else {
+                console.log("End Here: ", content)
                 return resolve(content);
             }
         });
+        stream.run();
+        return;
     })
         .then(wrapResolveCallback(cb))
         .catch(cb);
 };
 
-var writeTempSimulationModules = function(
+var writeTempSimulationModules = function (
     repo,
     testbenchId,
     simulationTime,
@@ -657,7 +718,7 @@ var writeTempSimulationModules = function(
         });
     }
     const Repo = require("./repo");
-    const testbenchCB = function(testbenchEntry) {
+    const testbenchCB = function (testbenchEntry) {
         let dirName = shortid.generate() + "_" + Date.now();
         let fullPath = path.join(process.cwd(), `${dir}${dirName}`);
         fullPath = `${fullPath}/`;
@@ -666,7 +727,7 @@ var writeTempSimulationModules = function(
             fullPath = dir;
         }
         const mkdirCB = () =>
-            repo.getRoot(function(err, rootEntry) {
+            repo.getRoot(function (err, rootEntry) {
                 if (err) {
                     return cb(err);
                 } else {
@@ -674,7 +735,7 @@ var writeTempSimulationModules = function(
                         {
                             handler: EntryType.Folder
                         },
-                        function(err, folderEntries) {
+                        function (err, folderEntries) {
                             if (err) {
                                 return cb(err);
                             } else {
@@ -686,13 +747,13 @@ var writeTempSimulationModules = function(
                                 );
                                 const folderPaths = {};
                                 folderPaths[rootEntry._id] = "";
-                                folderEntries.forEach(function(folder, ind) {
+                                folderEntries.forEach(function (folder, ind) {
                                     let folderPath = `${encodeURIComponent(
                                         folder.title
                                     )}\\`;
                                     let parentId =
                                         folder.parent.toString() ===
-                                        rootEntry._id.toString()
+                                            rootEntry._id.toString()
                                             ? null
                                             : folder.parent.toString();
                                     let parentFolder = idMap[parentId];
@@ -703,7 +764,7 @@ var writeTempSimulationModules = function(
                                         )}\\${folderPath}`;
                                         parentId =
                                             parentFolder.parent.toString() ===
-                                            rootEntry._id.toString()
+                                                rootEntry._id.toString()
                                                 ? null
                                                 : parentFolder.parent.toString();
                                         parentFolder = idMap[parentId];
@@ -718,12 +779,12 @@ var writeTempSimulationModules = function(
                                         handler: EntryType.IP,
                                         included: true
                                     },
-                                    function(err, ipEntries) {
+                                    function (err, ipEntries) {
                                         if (err) {
                                             return cb(err);
                                         } else {
                                             return repo.getSynthesizable(
-                                                function(err, verilogEntries) {
+                                                function (err, verilogEntries) {
                                                     if (err) {
                                                         return cb(err);
                                                     } else {
@@ -737,39 +798,39 @@ var writeTempSimulationModules = function(
                                                         }
                                                         return async.each(
                                                             verilogEntries,
-                                                            function(
+                                                            function (
                                                                 entry,
                                                                 callback
                                                             ) {
                                                                 const fileName = `${
                                                                     folderPaths[
-                                                                        entry
-                                                                            .parent
+                                                                    entry
+                                                                        .parent
                                                                     ]
-                                                                }${encodeURIComponent(
-                                                                    entry.title
-                                                                )}`;
+                                                                    }${encodeURIComponent(
+                                                                        entry.title
+                                                                    )}`;
 
                                                                 fileNames[
                                                                     entry._id
                                                                 ] = {
-                                                                    tempName: fileName,
-                                                                    sourceName:
-                                                                        entry.title
-                                                                };
+                                                                        tempName: fileName,
+                                                                        sourceName:
+                                                                            entry.title
+                                                                    };
 
                                                                 reverseMap[
                                                                     fileName
                                                                 ] = {
-                                                                    sourceName:
-                                                                        entry.title,
-                                                                    sourceId:
-                                                                        entry._id
-                                                                };
+                                                                        sourceName:
+                                                                            entry.title,
+                                                                        sourceId:
+                                                                            entry._id
+                                                                    };
 
                                                                 return getFileContent(
                                                                     entry,
-                                                                    function(
+                                                                    function (
                                                                         readErr,
                                                                         content
                                                                     ) {
@@ -805,9 +866,9 @@ var writeTempSimulationModules = function(
                                                                             );
                                                                             if (
                                                                                 depth ===
-                                                                                    0 &&
+                                                                                0 &&
                                                                                 entry ===
-                                                                                    testbenchEntry
+                                                                                testbenchEntry
                                                                             ) {
                                                                                 //TODO: Remove comments!
                                                                                 let moduleRegEx = /([\s\S]*?)(module)([\s\S]+?)(endmodule)([\s\S]*)/gm;
@@ -828,7 +889,7 @@ var writeTempSimulationModules = function(
                                                                                 }
                                                                                 dumpName = `${
                                                                                     testbenchEntry.title
-                                                                                }_${Date.now()}.vcd`;
+                                                                                    }_${Date.now()}.vcd`;
                                                                                 if (
                                                                                     /\$\s*stop/.test(
                                                                                         content
@@ -844,28 +905,28 @@ var writeTempSimulationModules = function(
                                                                                 const finishAppend = `\n#${simulationTime};\n$finish;\n`;
                                                                                 content = `${
                                                                                     matches[1]
-                                                                                }${
+                                                                                    }${
                                                                                     matches[2]
-                                                                                } ${
+                                                                                    } ${
                                                                                     matches[3]
-                                                                                } ${
+                                                                                    } ${
                                                                                     matches[4]
                                                                                         ? matches[4]
                                                                                         : ""
-                                                                                };${
+                                                                                    };${
                                                                                     matches[5]
-                                                                                }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(0, ${
+                                                                                    }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(0, ${
                                                                                     matches[3]
-                                                                                }); ${finishAppend}end\n${
+                                                                                    }); ${finishAppend}end\n${
                                                                                     matches[6]
-                                                                                }${
+                                                                                    }${
                                                                                     matches[7]
-                                                                                }`;
+                                                                                    }`;
                                                                             }
                                                                             return fs.writeFile(
                                                                                 `${fullPath}${fileName}`,
                                                                                 content,
-                                                                                function(
+                                                                                function (
                                                                                     writeErr
                                                                                 ) {
                                                                                     if (
@@ -889,7 +950,7 @@ var writeTempSimulationModules = function(
                                                                     }
                                                                 );
                                                             },
-                                                            function(asyncErr) {
+                                                            function (asyncErr) {
                                                                 if (asyncErr) {
                                                                     return cb(
                                                                         asyncErr
@@ -897,7 +958,7 @@ var writeTempSimulationModules = function(
                                                                 } else {
                                                                     return async.each(
                                                                         ipEntries,
-                                                                        function(
+                                                                        function (
                                                                             ipEntry,
                                                                             callback
                                                                         ) {
@@ -912,7 +973,7 @@ var writeTempSimulationModules = function(
                                                                                     {
                                                                                         error: `Cannot find the source of the IP Core ${
                                                                                             ipEntry.title
-                                                                                        }.`
+                                                                                            }.`
                                                                                     }
                                                                                 );
                                                                             }
@@ -921,7 +982,7 @@ var writeTempSimulationModules = function(
                                                                                     _id:
                                                                                         ipData.ip
                                                                                 },
-                                                                                function(
+                                                                                function (
                                                                                     err,
                                                                                     ip
                                                                                 ) {
@@ -938,7 +999,7 @@ var writeTempSimulationModules = function(
                                                                                             {
                                                                                                 error: `Cannot find the source of the IP Core ${
                                                                                                     ipEntry.title
-                                                                                                }.`
+                                                                                                    }.`
                                                                                             }
                                                                                         );
                                                                                     } else {
@@ -947,7 +1008,7 @@ var writeTempSimulationModules = function(
                                                                                                 _id:
                                                                                                     ip.repo
                                                                                             },
-                                                                                            function(
+                                                                                            function (
                                                                                                 err,
                                                                                                 ipRepo
                                                                                             ) {
@@ -964,43 +1025,43 @@ var writeTempSimulationModules = function(
                                                                                                         {
                                                                                                             error: `Cannot instantiate IP Core ${
                                                                                                                 ipEntry.title
-                                                                                                            }.`
+                                                                                                                }.`
                                                                                                         }
                                                                                                     );
                                                                                                 } else {
                                                                                                     const fileName = `${
                                                                                                         folderPaths[
-                                                                                                            ipEntry
-                                                                                                                .parent
+                                                                                                        ipEntry
+                                                                                                            .parent
                                                                                                         ]
-                                                                                                    }${encodeURIComponent(
-                                                                                                        ipEntry.title
-                                                                                                    )}`;
+                                                                                                        }${encodeURIComponent(
+                                                                                                            ipEntry.title
+                                                                                                        )}`;
 
                                                                                                     fileNames[
                                                                                                         ipEntry._id
                                                                                                     ] = {
-                                                                                                        tempName: fileName,
-                                                                                                        sourceName:
-                                                                                                            ipEntry.title
-                                                                                                    };
+                                                                                                            tempName: fileName,
+                                                                                                            sourceName:
+                                                                                                                ipEntry.title
+                                                                                                        };
 
                                                                                                     reverseMap[
                                                                                                         fileName
                                                                                                     ] = {
-                                                                                                        sourceName:
-                                                                                                            ipEntry.title,
-                                                                                                        sourceId:
-                                                                                                            ipEntry._id
-                                                                                                    };
+                                                                                                            sourceName:
+                                                                                                                ipEntry.title,
+                                                                                                            sourceId:
+                                                                                                                ipEntry._id
+                                                                                                        };
                                                                                                     return writeTempSimulationModules(
                                                                                                         ipRepo,
                                                                                                         false,
                                                                                                         0,
                                                                                                         `${fullPath}/${fileName}\\`,
                                                                                                         depth +
-                                                                                                            1,
-                                                                                                        function(
+                                                                                                        1,
+                                                                                                        function (
                                                                                                             err
                                                                                                         ) {
                                                                                                             if (
@@ -1021,7 +1082,7 @@ var writeTempSimulationModules = function(
                                                                                 }
                                                                             );
                                                                         },
-                                                                        function(
+                                                                        function (
                                                                             err
                                                                         ) {
                                                                             if (
@@ -1056,7 +1117,7 @@ var writeTempSimulationModules = function(
                 }
             });
         if (testbenchEntry) {
-            return fs.mkdir(fullPath, 0o0777, function(err) {
+            return fs.mkdir(fullPath, 0o0777, function (err) {
                 if (err) {
                     console.error(err);
                     return cb({
@@ -1076,7 +1137,7 @@ var writeTempSimulationModules = function(
             {
                 _id: testbenchId
             },
-            function(err, testbenchEntry) {
+            function (err, testbenchEntry) {
                 if (err) {
                     return cb(err);
                 } else if (!testbenchEntry) {
@@ -1149,7 +1210,7 @@ const writeNetlistSimulationModules = async (
 
                 parentId =
                     parentFolder.parent.toString() ===
-                    rootEntry._id.toString()
+                        rootEntry._id.toString()
                         ? null
                         : parentFolder.parent.toString();
                 parentFolder = idMap[parentId];
@@ -1172,8 +1233,8 @@ const writeNetlistSimulationModules = async (
             let fileName = `${folderPaths[entry.parent]}${encodeURIComponent(entry.title)}`;
             fileNames[entry._id] = { tempName: fileName, sourceName: entry.title };
             reverseMap[fileName] = { sourceName: entry.title, sourceId: entry._id };
-            
-            let content = await new Promise((resolve, reject)=> getFileContent(entry, (err, content)=> {
+
+            let content = await new Promise((resolve, reject) => getFileContent(entry, (err, content) => {
                 if (err) {
                     return reject(err);
                 }
@@ -1203,34 +1264,34 @@ const writeNetlistSimulationModules = async (
                 if (!matches) {
                     throw { error: "The testbench does not contain any module." };
                 }
-                
+
                 dumpName = `${testbenchEntry.title}_${Date.now()}.vcd`;
                 if (/\$\s*stop/.test(content)) {
                     return cb({
-                            error: "The $stop keyword is prohibited."
+                        error: "The $stop keyword is prohibited."
                     });
                 }
                 let finishAppend = `\n#${simulationTime};\n$finish;\n`;
 
 
                 content = `${matches[1]
-                }${
+                    }${
                     matches[2]
-                } ${
+                    } ${
                     matches[3]
-                } ${
+                    } ${
                     matches[4]
                         ? matches[4]
                         : ""
-                };${
+                    };${
                     matches[5]
-                }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(1, ${
+                    }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(1, ${
                     matches[3]
-                }); ${finishAppend}end\n${
+                    }); ${finishAppend}end\n${
                     matches[6]
-                }${
+                    }${
                     matches[7]
-                }`;
+                    }`;
             }
 
             await fs.writeFile(
@@ -1260,7 +1321,7 @@ const writeNetlistSimulationModules = async (
             });
         }
 
-        const done = function(
+        const done = function (
             err
         ) {
             if (err) {
@@ -1310,17 +1371,17 @@ const writeNetlistSimulationModules = async (
     }
 }
 
-const writeTempRepoModules = function(repo, cb) {
+const writeTempRepoModules = function (repo, cb) {
     const dirName = shortid.generate() + "_" + Date.now();
     const fullPath = path.join(process.cwd(), `temp/${dirName}`);
-    return fs.mkdir(fullPath, 0o0777, function(err) {
+    return fs.mkdir(fullPath, 0o0777, function (err) {
         if (err) {
             console.error(err);
             return cb({
                 error: "Failed to package the files for compiling."
             });
         } else {
-            return repo.getRoot(function(err, rootEntry) {
+            return repo.getRoot(function (err, rootEntry) {
                 if (err) {
                     return cb(err);
                 } else {
@@ -1329,7 +1390,7 @@ const writeTempRepoModules = function(repo, cb) {
                     {
                         handler: EntryType.Folder
                     },
-                    function(err, folderEntries) {
+                    function (err, folderEntries) {
                         if (err) {
                             return cb(err);
                         } else {
@@ -1341,13 +1402,13 @@ const writeTempRepoModules = function(repo, cb) {
                             );
                             const folderPaths = {};
                             folderPaths[rootEntry._id] = "";
-                            folderEntries.forEach(function(folder, ind) {
+                            folderEntries.forEach(function (folder, ind) {
                                 let folderPath = `${encodeURIComponent(
                                     folder.title
                                 )}\\`;
                                 let parentId =
                                     folder.parent.toString() ===
-                                    rootEntry._id.toString()
+                                        rootEntry._id.toString()
                                         ? null
                                         : folder.parent.toString();
                                 let parentFolder = idMap[parentId];
@@ -1358,7 +1419,7 @@ const writeTempRepoModules = function(repo, cb) {
                                     )}\\${folderPath}`;
                                     parentId =
                                         parentFolder.parent.toString() ===
-                                        rootEntry._id.toString()
+                                            rootEntry._id.toString()
                                             ? null
                                             : parentFolder.parent.toString();
                                     parentFolder = idMap[parentId];
@@ -1367,7 +1428,7 @@ const writeTempRepoModules = function(repo, cb) {
                                     folder._id.toString()
                                 ] = folderPath);
                             });
-                            return repo.isIPCoresIncluded(function(
+                            return repo.isIPCoresIncluded(function (
                                 err,
                                 result
                             ) {
@@ -1379,7 +1440,7 @@ const writeTempRepoModules = function(repo, cb) {
                                     });
                                 } else {
                                     const { isIncluded, names } = result;
-                                    return repo.getSynthesizable(function(
+                                    return repo.getSynthesizable(function (
                                         err,
                                         verilogEntries
                                     ) {
@@ -1390,15 +1451,15 @@ const writeTempRepoModules = function(repo, cb) {
                                             const reverseMap = {};
                                             return async.each(
                                                 verilogEntries,
-                                                function(entry, callback) {
+                                                function (entry, callback) {
                                                     //fileName = shortid.generate() + '_' + Date.now() + '.v'
                                                     const fileName = `${
                                                         folderPaths[
-                                                            entry.parent
+                                                        entry.parent
                                                         ]
-                                                    }${encodeURIComponent(
-                                                        entry.title
-                                                    )}`;
+                                                        }${encodeURIComponent(
+                                                            entry.title
+                                                        )}`;
 
                                                     fileNames[entry._id] = {
                                                         tempName: fileName,
@@ -1412,7 +1473,7 @@ const writeTempRepoModules = function(repo, cb) {
 
                                                     return getFileContent(
                                                         entry,
-                                                        function(
+                                                        function (
                                                             readErr,
                                                             content
                                                         ) {
@@ -1424,7 +1485,7 @@ const writeTempRepoModules = function(repo, cb) {
                                                                 return fs.writeFile(
                                                                     `${fullPath}/${fileName}`,
                                                                     content,
-                                                                    function(
+                                                                    function (
                                                                         writeErr
                                                                     ) {
                                                                         if (
@@ -1448,7 +1509,7 @@ const writeTempRepoModules = function(repo, cb) {
                                                         }
                                                     );
                                                 },
-                                                function(asyncErr) {
+                                                function (asyncErr) {
                                                     if (asyncErr) {
                                                         return cb(asyncErr);
                                                     } else {
@@ -1473,10 +1534,10 @@ const writeTempRepoModules = function(repo, cb) {
     });
 };
 
-const writeTempRepoModule = function(entryId, cb) {
+const writeTempRepoModule = function (entryId, cb) {
     const dirName = shortid.generate() + "_" + Date.now();
     const fullPath = path.join(process.cwd(), `temp/${dirName}`);
-    return fs.mkdir(fullPath, 0o0777, function(err) {
+    return fs.mkdir(fullPath, 0o0777, function (err) {
         if (err) {
             console.error(err);
             return cb({
@@ -1491,7 +1552,7 @@ const writeTempRepoModule = function(entryId, cb) {
                     handler: EntryType.VerilogFile,
                     synthesize: true
                 },
-                function(err, entry) {
+                function (err, entry) {
                     if (err) {
                         return cb(err);
                     } else if (entry) {
@@ -1499,7 +1560,7 @@ const writeTempRepoModule = function(entryId, cb) {
                             error: "Entry not found."
                         });
                     } else {
-                        return getFileContent(entry, function(err, content) {
+                        return getFileContent(entry, function (err, content) {
                             if (err) {
                                 return cb(err);
                             } else {
@@ -1515,7 +1576,7 @@ const writeTempRepoModule = function(entryId, cb) {
                                 return fs.writeFile(
                                     `${fullPath}/${fileName}`,
                                     content,
-                                    function(err) {
+                                    function (err) {
                                         if (err) {
                                             console.error(err);
                                             return cb({
@@ -1545,10 +1606,10 @@ const writeTempRepoModule = function(entryId, cb) {
         }
     });
 };
-const writeTempNetlist = function(entryId, cb) {
+const writeTempNetlist = function (entryId, cb) {
     const dirName = shortid.generate() + "_" + Date.now();
     const repoPath = path.join(process.cwd(), `temp/${dirName}`);
-    return fs.mkdir(repoPath, 0o0777, function(err) {
+    return fs.mkdir(repoPath, 0o0777, function (err) {
         if (err) {
             console.error(err);
             return cb({
@@ -1562,7 +1623,7 @@ const writeTempNetlist = function(entryId, cb) {
                     _id: entryId,
                     handler: EntryType.NetlistFile
                 },
-                function(err, entry) {
+                function (err, entry) {
                     if (err) {
                         return cb(err);
                     } else if (!entry) {
@@ -1570,7 +1631,7 @@ const writeTempNetlist = function(entryId, cb) {
                             error: "Netlist not found."
                         });
                     } else {
-                        return getFileContent(entry, function(err, content) {
+                        return getFileContent(entry, function (err, content) {
                             if (err) {
                                 return cb(err);
                             } else {
@@ -1585,7 +1646,7 @@ const writeTempNetlist = function(entryId, cb) {
                                     repoPath,
                                     folderName
                                 );
-                                return fs.mkdir(filePath, 0o0777, function(
+                                return fs.mkdir(filePath, 0o0777, function (
                                     err
                                 ) {
                                     if (err) {
@@ -1598,7 +1659,7 @@ const writeTempNetlist = function(entryId, cb) {
                                         return fs.writeFile(
                                             `${filePath}/${fileName}`,
                                             content,
-                                            function(err) {
+                                            function (err) {
                                                 if (err) {
                                                     console.error(err);
                                                     return cb({
@@ -1664,7 +1725,7 @@ const writeTempRepo = async (repo, cb) => {
             const parentsMap = {};
             const idMap = {};
             idMap[rootEntry._id] = rootEntry;
-            repoFolders.forEach(function(folder) {
+            repoFolders.forEach(function (folder) {
                 idMap[folder._id] = folder;
                 if (folder.parent != null) {
                     if (childrenMap[folder.parent] == null) {
@@ -1677,7 +1738,7 @@ const writeTempRepo = async (repo, cb) => {
             repoFolders.push(rootEntry);
 
             const fullPaths = {};
-            repoFolders.forEach(function(folder) {
+            repoFolders.forEach(function (folder) {
                 folderPath = `${folder.title}`;
                 let folderParentId = folder.parent;
                 let folderParent = "";
@@ -1754,7 +1815,7 @@ const writeTempRepo = async (repo, cb) => {
         .catch(cb);
 };
 
-const writeTestbenchFile = function(
+const writeTestbenchFile = function (
     repo,
     testbenchEntry,
     parentPaths,
@@ -1771,7 +1832,7 @@ const writeTestbenchFile = function(
     const multiCommentsRegEx = () =>
         new RegExp("\\/\\*(.|[\\r\\n])*?\\*\\/", "gm");
     let dumpName = `${testbenchEntry.title}_${Date.now()}.vcd`;
-    return testbenchEntry.getContent(function(err, content) {
+    return testbenchEntry.getContent(function (err, content) {
         if (err) {
             return cb(err);
         } else {
@@ -1796,17 +1857,17 @@ const writeTestbenchFile = function(
             const finishAppend = `\n#${simulationTime};\n$finish;\n`;
             content = `${matches[1]}${matches[2]} ${matches[3]} ${
                 matches[4] ? matches[4] : ""
-            };${
+                };${
                 matches[5]
-            }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(${level ||
+                }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(${level ||
                 0}, ${matches[3]}); ${finishAppend}end\n${matches[6]}${
                 matches[7]
-            }`;
+                }`;
             const testbenchPath = path.join(
                 parentPaths[testbenchEntry.parent],
                 testbenchEntry.title
             );
-            return fs.writeFile(testbenchPath, content, function(writeErr) {
+            return fs.writeFile(testbenchPath, content, function (writeErr) {
                 if (writeErr) {
                     console.error(writeErr);
                     return cb({
@@ -1820,7 +1881,7 @@ const writeTestbenchFile = function(
     });
 };
 
-const writeIPCoreFiles = function(
+const writeIPCoreFiles = function (
     repo,
     repoPath,
     parentPaths,
@@ -1842,54 +1903,54 @@ const writeIPCoreFiles = function(
             handler: EntryType.IP,
             included: true
         },
-        function(err, ips) {
+        function (err, ips) {
             if (err) {
                 return cb(err);
             } else {
                 return async.each(
                     ips,
-                    function(ipEntry, callback) {
+                    function (ipEntry, callback) {
                         const ipData = JSON.parse(ipEntry.data);
                         if (ipData.ip == null) {
                             return callback({
                                 error: `Cannot find the source of the IP Core ${
                                     ipEntry.title
-                                }.`
+                                    }.`
                             });
                         }
                         return Repo.getRepoIP(
                             {
                                 _id: ipData.ip
                             },
-                            function(err, ip) {
+                            function (err, ip) {
                                 if (err) {
                                     return callback(err);
                                 } else if (!ip) {
                                     return callback({
                                         error: `Cannot find the source of the IP Core ${
                                             ipEntry.title
-                                        }.`
+                                            }.`
                                     });
                                 } else {
                                     return Repo.getRepo(
                                         {
                                             _id: ip.repo
                                         },
-                                        function(err, ipRepo) {
+                                        function (err, ipRepo) {
                                             if (err) {
                                                 return callback(err);
                                             } else if (!ipRepo) {
                                                 return callback({
                                                     error: `Cannot instantiate IP Core ${
                                                         ipEntry.title
-                                                    }.`
+                                                        }.`
                                                 });
                                             } else {
                                                 return writeTestbenchSimulationStructure(
                                                     ipRepo,
                                                     depth + 1,
                                                     parentPaths[ipEntry._id],
-                                                    function(
+                                                    function (
                                                         err,
                                                         ipSourcePath,
                                                         ipFullPath,
@@ -1909,8 +1970,8 @@ const writeIPCoreFiles = function(
                                                                 filePaths.verilog.push(
                                                                     path.join(
                                                                         relativeParentPaths[
-                                                                            ipEntry
-                                                                                ._id
+                                                                        ipEntry
+                                                                            ._id
                                                                         ],
                                                                         filePath
                                                                     )
@@ -1920,7 +1981,7 @@ const writeIPCoreFiles = function(
                                                                 const fileId =
                                                                     ipNamesMap
                                                                         .files[
-                                                                        fileName
+                                                                    fileName
                                                                     ];
                                                                 if (
                                                                     namesMap.ips ==
@@ -1931,7 +1992,7 @@ const writeIPCoreFiles = function(
                                                                 if (
                                                                     namesMap
                                                                         .ips[
-                                                                        depth
+                                                                    depth
                                                                     ] == null
                                                                 ) {
                                                                     namesMap.ips[
@@ -1941,10 +2002,10 @@ const writeIPCoreFiles = function(
                                                                 if (
                                                                     namesMap
                                                                         .ips[
-                                                                        depth
+                                                                    depth
                                                                     ][
-                                                                        ipEntry
-                                                                            .title
+                                                                    ipEntry
+                                                                        .title
                                                                     ] == null
                                                                 ) {
                                                                     namesMap.ips[
@@ -1972,7 +2033,7 @@ const writeIPCoreFiles = function(
                             }
                         );
                     },
-                    function(err) {
+                    function (err) {
                         if (err) {
                             return cb(err);
                         } else {
@@ -1985,13 +2046,13 @@ const writeIPCoreFiles = function(
     );
 };
 
-var writeTestbenchSimulationStructure = function(repo, depth, rootDir, cb) {
+var writeTestbenchSimulationStructure = function (repo, depth, rootDir, cb) {
     if (depth >= 3) {
         return cb({
             error: "Cannot simulate IP depth >= 3."
         });
     }
-    return writeSynthesisContainerFiles(repo, false, true, rootDir, function(
+    return writeSynthesisContainerFiles(repo, false, true, rootDir, function (
         err,
         sourcePath,
         fullPath,
@@ -2025,7 +2086,7 @@ var writeTestbenchSimulationStructure = function(repo, depth, rootDir, cb) {
             filePaths,
             namesMap,
             depth,
-            function(err, filePaths, namesMap) {
+            function (err, filePaths, namesMap) {
                 if (err) {
                     return cb(err);
                 } else {
@@ -2043,6 +2104,7 @@ var writeTestbenchSimulationStructure = function(repo, depth, rootDir, cb) {
         );
     });
 };
+
 const writeTestbenchSimulationContainerFiles = (
     repo,
     item,
@@ -2055,7 +2117,7 @@ const writeTestbenchSimulationContainerFiles = (
         cb = rootDir;
         rootDir = "";
     }
-    return writeTestbenchSimulationStructure(repo, 0, rootDir, function(
+    return writeTestbenchSimulationStructure(repo, 0, rootDir, function (
         err,
         sourcePath,
         fullPath,
@@ -2073,7 +2135,7 @@ const writeTestbenchSimulationContainerFiles = (
                 parentPaths,
                 simulationTime,
                 level,
-                function(err, testbenchPath, dumpName) {
+                function (err, testbenchPath, dumpName) {
                     if (err) {
                         return cb(err);
                     }
@@ -2101,6 +2163,7 @@ const writeTestbenchSimulationContainerFiles = (
         }
     });
 };
+
 const writeNetlistSimulationContainerFiles = (
     repo,
     item,
@@ -2116,10 +2179,10 @@ const writeNetlistSimulationContainerFiles = (
         rootDir = "";
     }
 
-    writeRepoFolderStructure(repo, true, rootDir, function(err, result) {
+    writeRepoFolderStructure(repo, true, rootDir, function (err, result) {
         if (err) {
             if (fullPath) {
-                rmdir(fullPath, function(err) {
+                rmdir(fullPath, function (err) {
                     if (err) {
                         return console.error(err);
                     }
@@ -2145,7 +2208,7 @@ const writeNetlistSimulationContainerFiles = (
                 parentPaths,
                 simulationTime,
                 level,
-                function(err, testbenchPath, dumpName) {
+                function (err, testbenchPath, dumpName) {
                     if (err) {
                         return cb(err);
                     }
@@ -2158,7 +2221,7 @@ const writeNetlistSimulationContainerFiles = (
                             testbenchRelativePath.indexOf("/") + 1
                         )
                     ] = item._id;
-                    return netlist.getContent(function(err, content) {
+                    return netlist.getContent(function (err, content) {
                         if (err) {
                             return cb(err);
                         } else {
@@ -2166,7 +2229,7 @@ const writeNetlistSimulationContainerFiles = (
                                 parentPaths[netlist.parent],
                                 netlist.title
                             );
-                            return fs.writeFile(entryPath, content, function(
+                            return fs.writeFile(entryPath, content, function (
                                 err
                             ) {
                                 if (err) {
@@ -2200,7 +2263,7 @@ const writeNetlistSimulationContainerFiles = (
                                             error: `Cannot find the standard cell models for this library ${stdcell}`
                                         });
                                     }
-                                    const done = function(err) {
+                                    const done = function (err) {
                                         if (err) {
                                             console.error(err);
                                             return cb({
@@ -2267,7 +2330,7 @@ const writeRepoFolderStructure = async (repo, allowIps, rootDir, cb) => {
             const rootEntry = await repo.getRoot();
             let { isIncluded, names } = await repo.isIPCoresIncluded();
             if (!allowIps && isIncluded) {
-                rmdir(fullPath, function(err) {
+                rmdir(fullPath, function (err) {
                     if (err) {
                         return console.error(err);
                     }
@@ -2299,7 +2362,7 @@ const writeRepoFolderStructure = async (repo, allowIps, rootDir, cb) => {
                 title: rootEntry.title,
                 included: true
             };
-            repoFolders.forEach(function(folder) {
+            repoFolders.forEach(function (folder) {
                 idMap[folder._id] = folder;
                 isIncluded[folder._id] = folder.included;
                 foldersMeta[folder._id] = {
@@ -2318,7 +2381,7 @@ const writeRepoFolderStructure = async (repo, allowIps, rootDir, cb) => {
 
             const fullPaths = {};
             const relativePaths = {};
-            repoFolders.forEach(function(folder) {
+            repoFolders.forEach(function (folder) {
                 folderPath = `${folder.title}`;
                 let folderParentId = folder.parent;
                 let folderParent = "";
@@ -2375,7 +2438,7 @@ const writeRepoFolderStructure = async (repo, allowIps, rootDir, cb) => {
                 });
             } catch (err) {
                 console.error(err);
-                rmdir(fullPath, function(err) {
+                rmdir(fullPath, function (err) {
                     if (err) {
                         return console.error(err);
                     }
@@ -2460,7 +2523,7 @@ var writeSynthesisContainerFiles = (
                                 ] = entry._id;
                                 return resolve(entryPath);
                             } catch (err) {
-                                rmdir(fullPath, function(err) {
+                                rmdir(fullPath, function (err) {
                                     if (err) {
                                         return console.error(err);
                                     }
@@ -2529,7 +2592,7 @@ var writeSynthesisContainerFiles = (
                             if (filePaths.topModule != null) {
                                 const topModuleRegex = new RegExp(
                                     `${
-                                        filePaths.topModule
+                                    filePaths.topModule
                                     } +(\\w+) *\\([\\s\\S]+\\);?`,
                                     "gmi"
                                 );
@@ -2546,7 +2609,7 @@ var writeSynthesisContainerFiles = (
                                         return callback({
                                             error: `Invalid testbench ${
                                                 entry.title
-                                            }`
+                                                }`
                                         });
                                     }
                                     filePaths.topModule = moduleMatches[1];
@@ -2571,6 +2634,7 @@ var writeSynthesisContainerFiles = (
         .then(wrapResolveCallback(cb))
         .catch(cb);
 };
+
 const writeCompilationContainerFiles = (
     repo,
     target,
@@ -2583,7 +2647,7 @@ const writeCompilationContainerFiles = (
         cb = rootDir;
         rootDir = "";
     }
-    writeRepoFolderStructure(repo, false, rootDir, function(err, result) {
+    writeRepoFolderStructure(repo, false, rootDir, function (err, result) {
         if (err) {
             return cb(err);
         } else {
@@ -2594,7 +2658,7 @@ const writeCompilationContainerFiles = (
                 relativePaths,
                 foldersMeta
             } = result;
-            return repo.getCompileable(function(err, swEntries) {
+            return repo.getCompileable(function (err, swEntries) {
                 if (err) {
                     return cb(err);
                 } else {
@@ -2613,7 +2677,7 @@ const writeCompilationContainerFiles = (
                     );
                     return async.eachSeries(
                         swEntries,
-                        function(entry, callback) {
+                        function (entry, callback) {
                             let needle;
                             if (
                                 [
@@ -2621,7 +2685,7 @@ const writeCompilationContainerFiles = (
                                     EntryType.StartupScript
                                 ].includes(entry.handler) &&
                                 ((needle = entry._id.toString()),
-                                ![linkerFile, startupFile].includes(needle))
+                                    ![linkerFile, startupFile].includes(needle))
                             ) {
                                 return callback();
                             }
@@ -2630,14 +2694,14 @@ const writeCompilationContainerFiles = (
                                 entry.title
                             );
 
-                            return entry.getContent(function(err, content) {
+                            return entry.getContent(function (err, content) {
                                 if (err) {
                                     return callback(err);
                                 } else {
                                     return fs.writeFile(
                                         entryPath,
                                         content,
-                                        function(err) {
+                                        function (err) {
                                             if (err) {
                                                 console.error(err);
                                                 return callback({
@@ -2651,7 +2715,7 @@ const writeCompilationContainerFiles = (
                                                 );
                                                 relativePath = relativePath.substr(
                                                     relativePath.indexOf("/") +
-                                                        1
+                                                    1
                                                 );
 
                                                 if (
@@ -2695,9 +2759,9 @@ const writeCompilationContainerFiles = (
                                 }
                             });
                         },
-                        function(err) {
+                        function (err) {
                             if (err) {
-                                rmdir(repoPath, function(err) {
+                                rmdir(repoPath, function (err) {
                                     if (err) {
                                         return console.error(err);
                                     }
@@ -2708,20 +2772,20 @@ const writeCompilationContainerFiles = (
                                     {
                                         handler: EntryType.TextFile
                                     },
-                                    function(err, textFiles) {
+                                    function (err, textFiles) {
                                         if (err) {
                                             return cb(err);
                                         } else {
                                             return async.eachSeries(
                                                 textFiles,
-                                                function(entry, callback) {
+                                                function (entry, callback) {
                                                     const entryPath = path.join(
                                                         fullPaths[entry.parent],
                                                         entry.title
                                                     );
 
                                                     return entry.getContent(
-                                                        function(err, content) {
+                                                        function (err, content) {
                                                             if (err) {
                                                                 return callback(
                                                                     err
@@ -2730,7 +2794,7 @@ const writeCompilationContainerFiles = (
                                                                 return fs.writeFile(
                                                                     entryPath,
                                                                     content,
-                                                                    function(
+                                                                    function (
                                                                         err
                                                                     ) {
                                                                         if (
@@ -2748,8 +2812,8 @@ const writeCompilationContainerFiles = (
                                                                         } else {
                                                                             const relativePath = path.join(
                                                                                 relativePaths[
-                                                                                    entry
-                                                                                        .parent
+                                                                                entry
+                                                                                    .parent
                                                                                 ],
                                                                                 entry.title
                                                                             );
@@ -2761,7 +2825,7 @@ const writeCompilationContainerFiles = (
                                                                                     relativePath.indexOf(
                                                                                         "/"
                                                                                     ) +
-                                                                                        1
+                                                                                    1
                                                                                 )
                                                                             ] =
                                                                                 entry._id;
@@ -2776,11 +2840,11 @@ const writeCompilationContainerFiles = (
                                                         }
                                                     );
                                                 },
-                                                function(err) {
+                                                function (err) {
                                                     if (err) {
                                                         rmdir(
                                                             repoPath,
-                                                            function(err) {
+                                                            function (err) {
                                                                 if (err) {
                                                                     return console.error(
                                                                         err
@@ -2829,7 +2893,7 @@ const packageRepo = (repo, cb) => {
                     error: "Failed to package."
                 };
             }
-            rmdir(repoPath, function(err) {
+            rmdir(repoPath, function (err) {
                 if (err) {
                     return console.error(err);
                 }
@@ -2846,19 +2910,19 @@ const packageRepo = (repo, cb) => {
         .catch(cb);
 };
 
-const streamRepo = (repo, cb) =>
-    packageRepo(repo, function(err, zipPath, tempPath) {
+const streamRepo = (repo, cb) => {
+    packageRepo(repo, function (err, zipPath, tempPath) {
         if (err) {
             return cb(err);
         } else {
             const stream = fs.createReadStream(zipPath);
-            stream.on("end", function() {
-                fs.unlink(zipPath, function(err) {
+            stream.on("end", function () {
+                fs.unlink(zipPath, function (err) {
                     if (err) {
                         return console.error(err);
                     }
                 });
-                return rmdir(tempPath, function(err) {
+                return rmdir(tempPath, function (err) {
                     if (err) {
                         return console.error(err);
                     }
@@ -2868,19 +2932,21 @@ const streamRepo = (repo, cb) =>
             return cb(null, stream);
         }
     });
+}
 
-const cleanupFiles = function(query, cb) {
+const cleanupFiles = function (query, cb) {
+    console.log("CleanupFiles called")
     if (query == null) {
         query = {};
     }
     query.deleted = true;
     const repoFileModel = mongoose.model("RepoFile");
-    return repoFileModel.find(query, function(err, files) {
+    return repoFileModel.find(query, function (err, files) {
         if (err) {
             return cb(err);
         } else {
             files.forEach(file =>
-                clearFile(file.fsId, function(err) {
+                clearFile(file.fsId, function (err) {
                     if (err) {
                         return console.error(err);
                     }

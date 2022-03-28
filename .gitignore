@@ -125,3 +125,6 @@ modules/lambda/*/*.zip
 
 # MongoDB
 /mongo
+
+# Gridfs-stream-local Files
+/gridfs-files

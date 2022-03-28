@@ -141,14 +141,14 @@ const createRepo = async (repo, cb) => {
 			createdRepo.swDir = swFolderEntry._id;
 			createdRepo.swHexDir = swHexEntry._id;
 		} catch (err) {
-			createdRepo.remove().then(() => {}).catch(console.error)
+			createdRepo.remove().then(() => { }).catch(console.error)
 			return reject(err)
 		}
 		let updatedRepo
 		try {
 			updatedRepo = await createdRepo.save();
 		} catch (err) {
-			createdRepo.remove().then(() => {}).catch(console.error);
+			createdRepo.remove().then(() => { }).catch(console.error);
 			return reject(handleMongooseError(err, 'An error occurred while creating the repository.'));
 		}
 		try {
@@ -308,7 +308,7 @@ const cloneRepo = async (sourceRepo, repoData, cb) => {
 					try {
 						duplicatedFile = await FileManager.duplicateFile(clonedEntry, sourceEntry);
 					} catch (err) {
-						clonedEntry.remove().then(() => {}).catch(console.error)
+						clonedEntry.remove().then(() => { }).catch(console.error)
 						throw err;
 					}
 					cloneMap[sourceEntry._id] = clonedEntry._id;
@@ -330,7 +330,7 @@ const cloneRepo = async (sourceRepo, repoData, cb) => {
 			return resolve(refreshedRepo);
 		} catch (err) {
 			if (repoCreated) {
-				deleteRepo(newRepo).then(() => {}).catch(console.error)
+				deleteRepo(newRepo).then(() => { }).catch(console.error)
 			}
 			return reject(err);
 		}
@@ -384,7 +384,7 @@ const deleteRepo = async (repo, cb) => {
 				new Promise(async (resolve, reject) => {
 					try {
 						const roles = await repo.getRoleEntries({});
-						Promise.all(_.map(roles, role => removeRole(role._id))).then(() => {}).catch(console.error);
+						Promise.all(_.map(roles, role => removeRole(role._id))).then(() => { }).catch(console.error);
 					} catch (err) {
 						return reject(err);
 					}
@@ -454,9 +454,9 @@ const createRepoEntry = async (entry, overwrite, cb) => {
 					handler: EntryType.RepoRoot,
 					repo: entry.repo
 				} : {
-					title: entry.title,
-					parent: entry.parent
-				});
+						title: entry.title,
+						parent: entry.parent
+					});
 				if (entryExists) {
 					if (isRoot) {
 						return reject({
@@ -703,13 +703,13 @@ const formatDhtmlx = function (entries, root) {
 			file.im1 = 'folderOpen.gif';
 			file.im2 = 'folderClosed.gif';
 			file.userdata = [{
-					name: 'type',
-					content: 'folder'
-				},
-				{
-					name: 'handler',
-					content: 'folder'
-				}
+				name: 'type',
+				content: 'folder'
+			},
+			{
+				name: 'handler',
+				content: 'folder'
+			}
 			];
 		} else if (entry.handler === EntryType.RepoRoot) {
 			file.im0 = 'folderClosed.gif';
@@ -717,13 +717,13 @@ const formatDhtmlx = function (entries, root) {
 			file.im2 = 'folderClosed.gif';
 			file.open = '1';
 			file.userdata = [{
-					name: 'type',
-					content: 'folder'
-				},
-				{
-					name: 'handler',
-					content: 'root'
-				}
+				name: 'type',
+				content: 'folder'
+			},
+			{
+				name: 'handler',
+				content: 'root'
+			}
 			];
 		} else {
 			file.im0 = 'leaf.gif';
@@ -832,16 +832,16 @@ const getRepoStructureByType = async (repoId, query, format = 'jstree', cb) => {
 			query = format === 'jstree' ? _.defaults({
 				repo: repoId
 			}, query) : {
-				repo: repoId,
-				$or: [{
+					repo: repoId,
+					$or: [{
 						handler: EntryType.Folder
 					},
 					{
 						handler: EntryType.RepoRoot
 					},
-					query
-				]
-			};
+						query
+					]
+				};
 			const entries = await getRepoEntries(query);
 			if (format === 'json') {
 				return resolve(entris);
@@ -916,11 +916,11 @@ const getRepoFolderStructure = async (repoId, cb, forma = 'dhtmlx') => {
 			const entries = await getRepoEntries({
 				repo: repoId,
 				$or: [{
-						handler: EntryType.Folder
-					},
-					{
-						handler: EntryType.RepoRoot
-					}
+					handler: EntryType.Folder
+				},
+				{
+					handler: EntryType.RepoRoot
+				}
 				]
 			});
 			return resolve(formatDhtmlx(entries))
@@ -1142,8 +1142,8 @@ const getRepoRole = async (repoId, userId, cb) => {
 const getRepoRoles = function (repoId, cb) {
 	const User = require("./user");
 	return getRepoRoleEntries({
-			repo: repoId
-		},
+		repo: repoId
+	},
 		function (err, roles) {
 			if (err) {
 				console.error(err);
@@ -1155,8 +1155,8 @@ const getRepoRoles = function (repoId, cb) {
 				return async.each(roles,
 					((role, callback) =>
 						User.getUser({
-								'_id': role.user
-							},
+							'_id': role.user
+						},
 							function (usrErr, user) {
 								if (usrErr) {
 									return callback(usrErr);
@@ -1636,8 +1636,8 @@ const accessRepo = async (ownerName, repoName, userId, next, cb) => {
 		}
 	}).then(wrapResolveCallback(cb)).catch(cb);
 	return User.getUser({
-			username: ownerName
-		},
+		username: ownerName
+	},
 		function (err, user) {
 			if (err) {
 				return cb(err);
@@ -1702,8 +1702,8 @@ const deleteRepoEntry = async (entryId, cb) => {
 const updateEntryContent = function (entryId, content, cb) {
 	const FileManager = require("./file_manager");
 	return getRepoEntry({
-			_id: entryId
-		},
+		_id: entryId
+	},
 		function (err, entry) {
 			if (err) {
 				return cb(err);
@@ -1999,17 +1999,17 @@ const search = function (query, userId, opts = {}, cb) {
 	}
 	const dbQuery = {
 		$or: [{
-				repoTitle: {
-					$regex: escapeStringRegexp(query),
-					$options: 'i'
-				}
-			},
-			{
-				description: {
-					$regex: escapeStringRegexp(query),
-					$options: 'i'
-				}
+			repoTitle: {
+				$regex: escapeStringRegexp(query),
+				$options: 'i'
 			}
+		},
+		{
+			description: {
+				$regex: escapeStringRegexp(query),
+				$options: 'i'
+			}
+		}
 		],
 		deleted: false
 	};
@@ -2108,14 +2108,14 @@ const getRepoFavorites = function (repo, cb) {
 			});
 		} else {
 			return async.each(favs, ((fav, callback) =>
-					fav.getUser(function (err, user) {
-						if (err) {
-							return callback(err);
-						} else {
-							fav.username = user.username;
-							return callback();
-						}
-					})),
+				fav.getUser(function (err, user) {
+					if (err) {
+						return callback(err);
+					} else {
+						fav.username = user.username;
+						return callback();
+					}
+				})),
 				function (err) {
 					if (err) {
 						return cb(err);
@@ -2166,14 +2166,14 @@ const getRepoWatches = function (repo, cb) {
 			});
 		} else {
 			return async.each(watches, ((watch, callback) =>
-					watch.getUser(function (err, user) {
-						if (err) {
-							return callback(err);
-						} else {
-							watch.username = user.username;
-							return callback();
-						}
-					})),
+				watch.getUser(function (err, user) {
+					if (err) {
+						return callback(err);
+					} else {
+						watch.username = user.username;
+						return callback();
+					}
+				})),
 				function (err) {
 					if (err) {
 						return cb(err);
@@ -2295,13 +2295,13 @@ const getTopRepos = function (limit, cb) {
 				privacy: PrivacyType.Public,
 				primary: true,
 				$or: [{
-						featured: false
-					},
-					{
-						featured: {
-							$exists: false
-						}
+					featured: false
+				},
+				{
+					featured: {
+						$exists: false
 					}
+				}
 				]
 			};
 			const newLimit = limit - featuredRepos.length;
@@ -2343,13 +2343,13 @@ const getLatestRepos = function (limit, cb) {
 				privacy: PrivacyType.Public,
 				primary: true,
 				$or: [{
-						featured: false
-					},
-					{
-						featured: {
-							$exists: false
-						}
+					featured: false
+				},
+				{
+					featured: {
+						$exists: false
 					}
+				}
 				]
 			};
 			const newLimit = limit - featuredRepos.length;
@@ -2397,13 +2397,13 @@ const getTrendingRepos = function (limit, cb) {
 				privacy: PrivacyType.Public,
 				primary: true,
 				$or: [{
-						featured: false
-					},
-					{
-						featured: {
-							$exists: false
-						}
+					featured: false
+				},
+				{
+					featured: {
+						$exists: false
 					}
+				}
 				]
 			};
 			const newLimit = limit - featuredRepos.length;
@@ -2775,7 +2775,7 @@ const createRepoVersion = async (query, versionData, cb) => {
 			} catch (err) {
 				console.error(err);
 				if (repoCreated) {
-					deleteRepo(clonedRepo).then(() => {}).catch(console.error);
+					deleteRepo(clonedRepo).then(() => { }).catch(console.error);
 				}
 				return reject({
 					error: 'An error occurred while creating the version.'
@@ -2783,7 +2783,7 @@ const createRepoVersion = async (query, versionData, cb) => {
 			}
 		} catch (err) {
 			if (repoCreated) {
-				deleteRepo(clonedRepo).then(() => {}).catch(console.error);
+				deleteRepo(clonedRepo).then(() => { }).catch(console.error);
 			}
 			return reject(err);
 		}
@@ -2959,7 +2959,7 @@ const deleteRepoVersion = async (versionId, cb) => {
 			if (!repo) {
 				console.error('Source file do not exist!');
 			} else {
-				deleteRepo(repo).then(() => {}).catch(console.error);
+				deleteRepo(repo).then(() => { }).catch(console.error);
 			}
 			version.deleted = true;
 			try {

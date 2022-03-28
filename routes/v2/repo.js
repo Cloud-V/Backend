@@ -3075,9 +3075,11 @@ try {
 			}
 		);
 	} else if (action === "delete") {
+		console.log("Delete Action")
 		for (key in req.body) {
 			value = req.body[key];
 			if (typeof value === "object" && key !== "item") {
+				console.log("1. Delete Action")
 				return res.status(400).json({
 					error: `Invalid value for the parameter ${key}`
 				});
@@ -3087,30 +3089,37 @@ try {
 			req.body.item == null ||
 			!Array.isArray(req.body.item)
 		) {
+			console.log("2. Delete Action")
 			return res.status(400).json({
 				error: "Missing parameter 'item'"
 			});
 		}
 		({ item } = req.body);
-		return repo.deleteMultiple(item, false, function(
-			err,
-			deletedItems
-		) {
-			const deletedItemsRes = [];
-			deletedItems.forEach(elem => {
-				return deletedItemsRes.push({
-					fileId: elem._id,
-					fileName: elem.title,
-					parentId: elem.parent,
-					fileType: elem.handlerName,
-					original: elem.original,
-					isTarget: elem.isTarget
-				});
-			});
 
-			return res.status(200).json({
-				files: deletedItemsRes
+		let [deletedItems, failedItems, failedErrors] = await repo.p.deleteMultiple(item, false).catch(err=> {
+			console.error(err);
+			throw { error: "Failed to delete items." };
+		});
+
+		console.log(deletedItems, failedItems, failedErrors);
+
+		const deletedItemsRes = [];
+		console.log("3. Delete Action")
+
+		deletedItems.forEach(elem => {
+			return deletedItemsRes.push({
+				fileId: elem._id,
+				fileName: elem.title,
+				parentId: elem.parent,
+				fileType: elem.handlerName,
+				original: elem.original,
+				isTarget: elem.isTarget
 			});
+		});
+		console.log("4. Delete Action")
+
+		return res.status(200).json({
+			files: deletedItemsRes
 		});
 	} else if (action === "rename") {
 		for (key in req.body) {

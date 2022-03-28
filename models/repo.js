@@ -35,7 +35,7 @@ const AllowReviews = {
 	Anyone: 4
 };
 
-const validateFSM = function(fsmContent) {
+const validateFSM = function (fsmContent) {
 	if (fsmContent == null) {
 		console.error("FSM file is empty!");
 		return false;
@@ -53,7 +53,7 @@ const validateFSM = function(fsmContent) {
 	}
 	return true;
 };
-const validateSOC = function(fsmContent) {
+const validateSOC = function (fsmContent) {
 	if (fsmContent == null) {
 		console.error("SOC file is empty!");
 		return false;
@@ -68,7 +68,7 @@ const validateSOC = function(fsmContent) {
 
 	return true;
 };
-const validateSYS = function(fsmContent) {
+const validateSYS = function (fsmContent) {
 	if (fsmContent == null) {
 		console.error("SYS file is empty!");
 		return false;
@@ -91,7 +91,7 @@ const repoSchema = new Schema(
 			required: "You must provide a valid name for the repository.",
 			lowercase: true,
 			validate: {
-				validator: async function(repoName, cb) {
+				validator: async function (repoName, cb) {
 					if (!/^\w+$/gm.test(repoName)) {
 						throw "The repository name can only contain letters, numbers and underscores.";
 					}
@@ -254,7 +254,7 @@ const repoSchema = new Schema(
 	}
 );
 
-repoSchema.path("privacy").validate(function(privacy) {
+repoSchema.path("privacy").validate(function (privacy) {
 	let needle;
 	return (
 		(needle = privacy),
@@ -271,7 +271,7 @@ repoSchema.path("privacy").validate(function(privacy) {
 	);
 }, "Invalid privacy type.");
 
-repoSchema.methods.getUser = function(cb) {
+repoSchema.methods.getUser = function (cb) {
 	const User = require("../controllers/user");
 	return User.getUser(
 		{
@@ -281,7 +281,7 @@ repoSchema.methods.getUser = function(cb) {
 	);
 };
 
-repoSchema.methods.getIP = function(cb) {
+repoSchema.methods.getIP = function (cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.getRepoIP(
 		{
@@ -291,7 +291,7 @@ repoSchema.methods.getIP = function(cb) {
 	);
 };
 
-repoSchema.methods.getOwnerName = async function(cb) {
+repoSchema.methods.getOwnerName = async function (cb) {
 	const User = require("../controllers/user");
 	const thisOwner = this.owner;
 	return new Promise(async (resolve, reject) => {
@@ -313,34 +313,34 @@ repoSchema.methods.getOwnerName = async function(cb) {
 		.catch(cb);
 };
 
-repoSchema.methods.clone = function(repoData, cb) {
+repoSchema.methods.clone = function (repoData, cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.cloneRepo(this, repoData, cb);
 };
 
-repoSchema.methods.writeTemp = function(cb) {
+repoSchema.methods.writeTemp = function (cb) {
 	const FileManager = require("../controllers/file_manager");
 	return FileManager.writeTempRepo(this, cb);
 };
 
-repoSchema.methods.package = function(cb) {
+repoSchema.methods.package = function (cb) {
 	const FileManager = require("../controllers/file_manager");
 	return FileManager.packageRepo(this, cb);
 };
 
-repoSchema.methods.stream = function(cb) {
+repoSchema.methods.stream = function (cb) {
 	const FileManager = require("../controllers/file_manager");
 	return FileManager.streamRepo(this, cb);
 };
 
-repoSchema.methods.getBuildEntry = function(cb) {
+repoSchema.methods.getBuildEntry = function (cb) {
 	const thisRepo = this;
 	if (this.buildDir != null) {
 		return this.getEntry(
 			{
 				_id: this.buildDir
 			},
-			function(err, entry) {
+			function (err, entry) {
 				if (err) {
 					return cb(err);
 				} else if (!entry) {
@@ -353,7 +353,7 @@ repoSchema.methods.getBuildEntry = function(cb) {
 			}
 		);
 	} else {
-		return this.getRoot(function(err, root) {
+		return this.getRoot(function (err, root) {
 			if (err) {
 				return cb(err);
 			} else if (!root) {
@@ -369,7 +369,7 @@ repoSchema.methods.getBuildEntry = function(cb) {
 						anchor: true,
 						parent: root._id
 					},
-					function(err, entry) {
+					function (err, entry) {
 						if (err) {
 							return cb(err);
 						} else if (!entry) {
@@ -385,14 +385,14 @@ repoSchema.methods.getBuildEntry = function(cb) {
 		});
 	}
 };
-repoSchema.methods.getSwEntry = function(cb) {
+repoSchema.methods.getSwEntry = function (cb) {
 	const thisRepo = this;
 	if (this.swDir != null) {
 		return this.getEntry(
 			{
 				_id: this.swDir
 			},
-			function(err, entry) {
+			function (err, entry) {
 				if (err) {
 					return cb(err);
 				} else if (!entry) {
@@ -405,7 +405,7 @@ repoSchema.methods.getSwEntry = function(cb) {
 			}
 		);
 	} else {
-		return this.getRoot(function(err, root) {
+		return this.getRoot(function (err, root) {
 			if (err) {
 				return cb(err);
 			} else if (!root) {
@@ -421,7 +421,7 @@ repoSchema.methods.getSwEntry = function(cb) {
 						anchor: true,
 						parent: root._id
 					},
-					function(err, entry) {
+					function (err, entry) {
 						if (err) {
 							return cb(err);
 						} else if (!entry) {
@@ -438,14 +438,14 @@ repoSchema.methods.getSwEntry = function(cb) {
 	}
 };
 
-repoSchema.methods.getSwHexEntry = function(cb) {
+repoSchema.methods.getSwHexEntry = function (cb) {
 	const thisRepo = this;
 	if (this.swHexDir != null) {
 		return this.getEntry(
 			{
 				_id: this.swHexDir
 			},
-			function(err, entry) {
+			function (err, entry) {
 				if (err) {
 					return cb(err);
 				} else if (!entry) {
@@ -458,7 +458,7 @@ repoSchema.methods.getSwHexEntry = function(cb) {
 			}
 		);
 	} else {
-		return this.getSwEntry(function(err, sw) {
+		return this.getSwEntry(function (err, sw) {
 			if (err) {
 				return cb(err);
 			} else if (!sw) {
@@ -474,7 +474,7 @@ repoSchema.methods.getSwHexEntry = function(cb) {
 						anchor: true,
 						parent: sw._id
 					},
-					function(err, entry) {
+					function (err, entry) {
 						if (err) {
 							return cb(err);
 						} else if (!entry) {
@@ -491,7 +491,7 @@ repoSchema.methods.getSwHexEntry = function(cb) {
 	}
 };
 
-repoSchema.methods.getFileStructure = function(format, cb) {
+repoSchema.methods.getFileStructure = function (format, cb) {
 	if (format == null) {
 		format = "jstree";
 	}
@@ -499,12 +499,12 @@ repoSchema.methods.getFileStructure = function(format, cb) {
 	return Repo.getRepoFileStructure(this._id, cb, format);
 };
 
-repoSchema.methods.getFolderStructure = function(cb) {
+repoSchema.methods.getFolderStructure = function (cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.getRepoFolderStructure(this._id, cb);
 };
 
-repoSchema.methods.getVerilogStructure = function(cb, format) {
+repoSchema.methods.getVerilogStructure = function (cb, format) {
 	if (format == null) {
 		format = "jstree";
 	}
@@ -512,7 +512,7 @@ repoSchema.methods.getVerilogStructure = function(cb, format) {
 	return Repo.getRepoVerilogStructure(this._id, cb, format);
 };
 
-repoSchema.methods.getTestbenchStructure = function(cb, format) {
+repoSchema.methods.getTestbenchStructure = function (cb, format) {
 	if (format == null) {
 		format = "jstree";
 	}
@@ -520,7 +520,7 @@ repoSchema.methods.getTestbenchStructure = function(cb, format) {
 	return Repo.getRepoTestbenchStructure(this._id, cb, format);
 };
 
-repoSchema.methods.getPCFStructure = function(cb, format) {
+repoSchema.methods.getPCFStructure = function (cb, format) {
 	if (format == null) {
 		format = "jstree";
 	}
@@ -528,7 +528,7 @@ repoSchema.methods.getPCFStructure = function(cb, format) {
 	return Repo.getRepoPCFStructure(this._id, cb, format);
 };
 
-repoSchema.methods.getDCFStructure = function(cb, format) {
+repoSchema.methods.getDCFStructure = function (cb, format) {
 	if (format == null) {
 		format = "jstree";
 	}
@@ -536,7 +536,7 @@ repoSchema.methods.getDCFStructure = function(cb, format) {
 	return Repo.getRepoDCFStructure(this._id, cb, format);
 };
 
-repoSchema.methods.getLinkerStructure = function(cb, format) {
+repoSchema.methods.getLinkerStructure = function (cb, format) {
 	if (format == null) {
 		format = "jstree";
 	}
@@ -544,7 +544,7 @@ repoSchema.methods.getLinkerStructure = function(cb, format) {
 	return Repo.getRepoLinkerStructure(this._id, cb, format);
 };
 
-repoSchema.methods.getStartupStructure = function(cb, format) {
+repoSchema.methods.getStartupStructure = function (cb, format) {
 	if (format == null) {
 		format = "jstree";
 	}
@@ -552,7 +552,7 @@ repoSchema.methods.getStartupStructure = function(cb, format) {
 	return Repo.getRepoStartupStructure(this._id, cb, format);
 };
 
-repoSchema.methods.getNetlistStructure = function(cb, format) {
+repoSchema.methods.getNetlistStructure = function (cb, format) {
 	if (format == null) {
 		format = "jstree";
 	}
@@ -560,7 +560,7 @@ repoSchema.methods.getNetlistStructure = function(cb, format) {
 	return Repo.getRepoNetlistStructure(this._id, format, cb);
 };
 
-repoSchema.methods.getSimulationStructure = function(cb, format) {
+repoSchema.methods.getSimulationStructure = function (cb, format) {
 	if (format == null) {
 		format = "jstree";
 	}
@@ -568,7 +568,7 @@ repoSchema.methods.getSimulationStructure = function(cb, format) {
 	return Repo.getRepoSimulationStructure(this._id, cb, format);
 };
 
-repoSchema.methods.getVerilogModules = function(cb) {
+repoSchema.methods.getVerilogModules = function (cb) {
 	const Repo = require("../controllers/repo");
 	const thisId = this._id;
 	return this.getEntries(
@@ -580,7 +580,7 @@ repoSchema.methods.getVerilogModules = function(cb) {
 	);
 };
 
-repoSchema.methods.getSynthesizable = function(cb) {
+repoSchema.methods.getSynthesizable = function (cb) {
 	const Repo = require("../controllers/repo");
 	const thisId = this._id;
 	return this.getEntries(
@@ -593,7 +593,7 @@ repoSchema.methods.getSynthesizable = function(cb) {
 		cb
 	);
 };
-repoSchema.methods.getExcludedVerilog = function(cb) {
+repoSchema.methods.getExcludedVerilog = function (cb) {
 	const Repo = require("../controllers/repo");
 	const thisId = this._id;
 	return this.getEntries(
@@ -606,7 +606,7 @@ repoSchema.methods.getExcludedVerilog = function(cb) {
 		cb
 	);
 };
-repoSchema.methods.getCompileable = function(cb) {
+repoSchema.methods.getCompileable = function (cb) {
 	const Repo = require("../controllers/repo");
 	const thisId = this._id;
 	return this.getEntries(
@@ -624,7 +624,7 @@ repoSchema.methods.getCompileable = function(cb) {
 		cb
 	);
 };
-repoSchema.methods.getExcludedSW = function(cb) {
+repoSchema.methods.getExcludedSW = function (cb) {
 	const Repo = require("../controllers/repo");
 	const thisId = this._id;
 	return this.getEntries(
@@ -644,7 +644,7 @@ repoSchema.methods.getExcludedSW = function(cb) {
 	);
 };
 
-repoSchema.methods.isIPCoresIncluded = async function(cb) {
+repoSchema.methods.isIPCoresIncluded = async function (cb) {
 	const Repo = require("../controllers/repo");
 	const thisId = this._id;
 	return new Promise(async (resolve, reject) => {
@@ -676,7 +676,7 @@ repoSchema.methods.isIPCoresIncluded = async function(cb) {
 			handler: EntryType.IP,
 			included: true
 		},
-		function(err, ips) {
+		function (err, ips) {
 			if (err) {
 				return cb(err);
 			} else if (ips.length) {
@@ -694,7 +694,7 @@ repoSchema.methods.isIPCoresIncluded = async function(cb) {
 	);
 };
 
-repoSchema.methods.getEntry = function(query, cb) {
+repoSchema.methods.getEntry = function (query, cb) {
 	if (query == null) {
 		query = {};
 	}
@@ -703,7 +703,7 @@ repoSchema.methods.getEntry = function(query, cb) {
 	return Repo.getRepoEntry(query, cb);
 };
 
-repoSchema.methods.getEntries = function(query, cb) {
+repoSchema.methods.getEntries = function (query, cb) {
 	if (query == null) {
 		query = {};
 	}
@@ -712,7 +712,7 @@ repoSchema.methods.getEntries = function(query, cb) {
 	return Repo.getRepoEntries(query, cb);
 };
 
-repoSchema.methods.getRoot = function(cb) {
+repoSchema.methods.getRoot = function (cb) {
 	const Repo = require("../controllers/repo");
 	const thisId = this._id;
 	return this.getEntry(
@@ -723,7 +723,7 @@ repoSchema.methods.getRoot = function(cb) {
 	);
 };
 
-repoSchema.methods.createFile = function(
+repoSchema.methods.createFile = function (
 	entryData,
 	fileData,
 	content,
@@ -874,7 +874,7 @@ repoSchema.methods.createFile = function(
 				} catch (err) {
 					newEntry
 						.remove()
-						.then(() => {})
+						.then(() => { })
 						.catch(console.error);
 					throw err;
 				}
@@ -887,7 +887,7 @@ repoSchema.methods.createFile = function(
 		.catch(cb);
 };
 
-repoSchema.methods.createVerilogModule = function(
+repoSchema.methods.createVerilogModule = function (
 	parentId,
 	user,
 	moduleName,
@@ -963,7 +963,7 @@ endmodule`;
 		cb
 	);
 };
-repoSchema.methods.createVerilogModuleWithContent = function(
+repoSchema.methods.createVerilogModuleWithContent = function (
 	parentId,
 	user,
 	moduleName,
@@ -1020,7 +1020,7 @@ repoSchema.methods.createVerilogModuleWithContent = function(
 	);
 };
 
-repoSchema.methods.importVerilogModule = function(
+repoSchema.methods.importVerilogModule = function (
 	parentId,
 	user,
 	moduleName,
@@ -1086,7 +1086,7 @@ ${content}`;
 	);
 };
 
-repoSchema.methods.importIPCore = function(
+repoSchema.methods.importIPCore = function (
 	parentId,
 	user,
 	ipImportName,
@@ -1203,7 +1203,7 @@ repoSchema.methods.importIPCore = function(
 	);
 };
 
-repoSchema.methods.createNetlist = function(
+repoSchema.methods.createNetlist = function (
 	user,
 	netlistName,
 	netlistContent,
@@ -1216,7 +1216,7 @@ repoSchema.methods.createNetlist = function(
 		overwrite = false;
 	}
 	const thisRepo = this;
-	return this.getBuildEntry(function(err, buildDir) {
+	return this.getBuildEntry(function (err, buildDir) {
 		if (err) {
 			return cb(err);
 		}
@@ -1250,7 +1250,7 @@ repoSchema.methods.createNetlist = function(
 				title: netlistFileName,
 				parent: buildDir._id
 			},
-			function(err, currentSynth) {
+			function (err, currentSynth) {
 				if (err) {
 					return cb(err);
 				} else if (!currentSynth) {
@@ -1284,7 +1284,7 @@ repoSchema.methods.createNetlist = function(
 					);
 				} else {
 					if (overwrite) {
-						return currentSynth.setState(state, function(
+						return currentSynth.setState(state, function (
 							err,
 							entry
 						) {
@@ -1296,7 +1296,7 @@ repoSchema.methods.createNetlist = function(
 								netlistContent,
 								true,
 								false,
-								function(err, content) {
+								function (err, content) {
 									if (err) {
 										return cb(err);
 									}
@@ -1318,7 +1318,7 @@ repoSchema.methods.createNetlist = function(
 	});
 };
 
-repoSchema.methods.createCompiledObject = function(
+repoSchema.methods.createCompiledObject = function (
 	user,
 	objName,
 	objContent,
@@ -1330,7 +1330,7 @@ repoSchema.methods.createCompiledObject = function(
 		overwrite = false;
 	}
 	const thisRepo = this;
-	return this.getBuildEntry(function(err, buildDir) {
+	return this.getBuildEntry(function (err, buildDir) {
 		if (err) {
 			return cb(err);
 		}
@@ -1364,7 +1364,7 @@ repoSchema.methods.createCompiledObject = function(
 				title: objFileName,
 				parent: buildDir._id
 			},
-			function(err, currentObj) {
+			function (err, currentObj) {
 				if (err) {
 					return cb(err);
 				} else if (!currentObj) {
@@ -1414,7 +1414,7 @@ repoSchema.methods.createCompiledObject = function(
 	});
 };
 
-repoSchema.methods.createHexFile = function(
+repoSchema.methods.createHexFile = function (
 	user,
 	objName,
 	objContent,
@@ -1426,7 +1426,7 @@ repoSchema.methods.createHexFile = function(
 		overwrite = false;
 	}
 	const thisRepo = this;
-	return this.getSwHexEntry(function(err, buildDir) {
+	return this.getSwHexEntry(function (err, buildDir) {
 		if (err) {
 			return cb(err);
 		}
@@ -1460,7 +1460,7 @@ repoSchema.methods.createHexFile = function(
 				title: objFileName,
 				parent: buildDir._id
 			},
-			function(err, currentObj) {
+			function (err, currentObj) {
 				if (err) {
 					return cb(err);
 				} else if (!currentObj) {
@@ -1497,7 +1497,7 @@ repoSchema.methods.createHexFile = function(
 							objContent,
 							true,
 							false,
-							function(err, content) {
+							function (err, content) {
 								if (err) {
 									return cb(err);
 								}
@@ -1516,7 +1516,7 @@ repoSchema.methods.createHexFile = function(
 		);
 	});
 };
-repoSchema.methods.createListFile = function(
+repoSchema.methods.createListFile = function (
 	user,
 	objName,
 	objContent,
@@ -1528,7 +1528,7 @@ repoSchema.methods.createListFile = function(
 		overwrite = false;
 	}
 	const thisRepo = this;
-	return this.getSwHexEntry(function(err, buildDir) {
+	return this.getSwHexEntry(function (err, buildDir) {
 		if (err) {
 			return cb(err);
 		}
@@ -1562,7 +1562,7 @@ repoSchema.methods.createListFile = function(
 				title: objFileName,
 				parent: buildDir._id
 			},
-			function(err, currentObj) {
+			function (err, currentObj) {
 				if (err) {
 					return cb(err);
 				} else if (!currentObj) {
@@ -1599,7 +1599,7 @@ repoSchema.methods.createListFile = function(
 							objContent,
 							true,
 							false,
-							function(err, content) {
+							function (err, content) {
 								if (err) {
 									return cb(err);
 								}
@@ -1619,7 +1619,7 @@ repoSchema.methods.createListFile = function(
 	});
 };
 
-repoSchema.methods.createBitstream = function(
+repoSchema.methods.createBitstream = function (
 	user,
 	bitstreamName,
 	bistreamContent,
@@ -1636,7 +1636,7 @@ repoSchema.methods.createBitstream = function(
 	}
 
 	const thisRepo = this;
-	return this.getBuildEntry(function(err, buildDir) {
+	return this.getBuildEntry(function (err, buildDir) {
 		if (err) {
 			return cb(err);
 		}
@@ -1669,7 +1669,7 @@ repoSchema.methods.createBitstream = function(
 				title: bitstreamFileName,
 				parent: buildDir._id
 			},
-			function(err, currentBitstream) {
+			function (err, currentBitstream) {
 				if (err) {
 					return cb(err);
 				} else if (!currentBitstream) {
@@ -1706,7 +1706,7 @@ repoSchema.methods.createBitstream = function(
 							bistreamContent,
 							true,
 							false,
-							function(err, content) {
+							function (err, content) {
 								if (err) {
 									return cb(err);
 								}
@@ -1726,7 +1726,7 @@ repoSchema.methods.createBitstream = function(
 	});
 };
 
-repoSchema.methods.createSynthesisReport = function(
+repoSchema.methods.createSynthesisReport = function (
 	user,
 	reportName,
 	reportContent,
@@ -1739,7 +1739,7 @@ repoSchema.methods.createSynthesisReport = function(
 		overwrite = false;
 	}
 	const thisRepo = this;
-	return this.getBuildEntry(function(err, buildDir) {
+	return this.getBuildEntry(function (err, buildDir) {
 		if (err) {
 			return cb(err);
 		}
@@ -1773,7 +1773,7 @@ repoSchema.methods.createSynthesisReport = function(
 				title: reportFileName,
 				parent: buildDir._id
 			},
-			function(err, currentReport) {
+			function (err, currentReport) {
 				if (err) {
 					return cb(err);
 				} else if (!currentReport) {
@@ -1807,7 +1807,7 @@ repoSchema.methods.createSynthesisReport = function(
 					);
 				} else {
 					if (overwrite) {
-						return currentReport.setState(state, function(
+						return currentReport.setState(state, function (
 							err,
 							entry
 						) {
@@ -1819,7 +1819,7 @@ repoSchema.methods.createSynthesisReport = function(
 								reportContent,
 								true,
 								false,
-								function(err, content) {
+								function (err, content) {
 									if (err) {
 										return cb(err);
 									}
@@ -1841,7 +1841,7 @@ repoSchema.methods.createSynthesisReport = function(
 	});
 };
 
-repoSchema.methods.createSTA = function(
+repoSchema.methods.createSTA = function (
 	user,
 	reportName,
 	reportContent,
@@ -1854,7 +1854,7 @@ repoSchema.methods.createSTA = function(
 		overwrite = false;
 	}
 	const thisRepo = this;
-	return this.getBuildEntry(function(err, buildDir) {
+	return this.getBuildEntry(function (err, buildDir) {
 		if (err) {
 			return cb(err);
 		}
@@ -1889,7 +1889,7 @@ repoSchema.methods.createSTA = function(
 				title: reportFileName,
 				parent: buildDir._id
 			},
-			function(err, currentReport) {
+			function (err, currentReport) {
 				if (err) {
 					return cb(err);
 				} else if (!currentReport) {
@@ -1940,7 +1940,7 @@ repoSchema.methods.createSTA = function(
 	});
 };
 
-repoSchema.methods.createVCD = function(
+repoSchema.methods.createVCD = function (
 	user,
 	sourceTestbench,
 	isNetlist,
@@ -1956,7 +1956,7 @@ repoSchema.methods.createVCD = function(
 		overwrite = false;
 	}
 	const thisRepo = this;
-	return this.getBuildEntry(function(err, buildDir) {
+	return this.getBuildEntry(function (err, buildDir) {
 		if (err) {
 			return cb(err);
 		}
@@ -2000,7 +2000,7 @@ repoSchema.methods.createVCD = function(
 				title: vcdFileName,
 				parent: buildDir._id
 			},
-			function(err, currentVCD) {
+			function (err, currentVCD) {
 				if (err) {
 					return cb(err);
 				} else if (!currentVCD) {
@@ -2045,7 +2045,7 @@ repoSchema.methods.createVCD = function(
 									vcdContent,
 									true,
 									false,
-									function(err, content) {
+									function (err, content) {
 										if (err) {
 											return cb(err);
 										}
@@ -2059,7 +2059,7 @@ repoSchema.methods.createVCD = function(
 								return thisRepo.updateEntryAttributes(
 									currentVCD._id,
 									"",
-									function(err, updatedEntry) {
+									function (err, updatedEntry) {
 										if (err) {
 											return cb(err);
 										} else {
@@ -2068,7 +2068,7 @@ repoSchema.methods.createVCD = function(
 												JSON.stringify({
 													source: sourceTestbench
 												}),
-												function(err, updatedEntry) {
+												function (err, updatedEntry) {
 													if (err) {
 														return cb(err);
 													} else {
@@ -2077,7 +2077,7 @@ repoSchema.methods.createVCD = function(
 															vcdContent,
 															true,
 															false,
-															function(
+															function (
 																err,
 																content
 															) {
@@ -2107,7 +2107,7 @@ repoSchema.methods.createVCD = function(
 							return thisRepo.updateEntryAttributes(
 								currentVCD._id,
 								"",
-								function(err, updatedEntry) {
+								function (err, updatedEntry) {
 									if (err) {
 										return cb(err);
 									} else {
@@ -2117,7 +2117,7 @@ repoSchema.methods.createVCD = function(
 												{
 													source: sourceTestbench
 												},
-												function(err, updatedEntry) {
+												function (err, updatedEntry) {
 													if (err) {
 														return cb(err);
 													} else {
@@ -2147,7 +2147,7 @@ repoSchema.methods.createVCD = function(
 	});
 };
 
-repoSchema.methods.createPCF = function(
+repoSchema.methods.createPCF = function (
 	parentId,
 	user,
 	pcfName,
@@ -2203,7 +2203,7 @@ repoSchema.methods.createPCF = function(
 		encoding: "7bit",
 		extension: "pcf"
 	};
-	
+
 	return this.createFile(
 		entryData,
 		fileData,
@@ -2214,7 +2214,7 @@ repoSchema.methods.createPCF = function(
 	);
 };
 
-repoSchema.methods.createDCF = function(
+repoSchema.methods.createDCF = function (
 	parentId,
 	user,
 	dcfName,
@@ -2299,7 +2299,7 @@ repoSchema.methods.createDCF = function(
 						return cb({
 							error: `Invalid constraint value ${
 								constr[opt]
-							} for option ${opt}.`
+								} for option ${opt}.`
 						});
 					}
 					if (
@@ -2309,9 +2309,9 @@ repoSchema.methods.createDCF = function(
 						return cb({
 							error: `Invalid constraint value ${
 								constr[opt]
-							} for option ${opt}, it should be between ${
+								} for option ${opt}, it should be between ${
 								validConstr[opt + "Min"]
-							} and ${validConstr[opt + "Max"]}.`
+								} and ${validConstr[opt + "Max"]}.`
 						});
 					}
 					constrContent[opt] = optValue;
@@ -2356,7 +2356,7 @@ repoSchema.methods.createDCF = function(
 	});
 };
 
-repoSchema.methods.createVerilogTestbench = function(
+repoSchema.methods.createVerilogTestbench = function (
 	parentId,
 	user,
 	testbenchName,
@@ -2394,7 +2394,7 @@ repoSchema.methods.createVerilogTestbench = function(
 			{
 				_id: sourceFile
 			},
-			function(err, sourceEntry) {
+			function (err, sourceEntry) {
 				if (err) {
 					return cb(err);
 				} else if (!sourceEntry) {
@@ -2406,7 +2406,7 @@ repoSchema.methods.createVerilogTestbench = function(
 						sourceModule,
 						sourceEntry,
 						testbenchName,
-						function(err, moduleContent) {
+						function (err, moduleContent) {
 							if (err) {
 								return cb(err);
 							} else {
@@ -2462,7 +2462,7 @@ endmodule`;
 	}
 };
 
-repoSchema.methods.createVerilogTestbenchWithContent = function(
+repoSchema.methods.createVerilogTestbenchWithContent = function (
 	parentId,
 	user,
 	testbenchName,
@@ -2520,7 +2520,7 @@ repoSchema.methods.createVerilogTestbenchWithContent = function(
 	);
 };
 
-repoSchema.methods.createTextfile = async function(
+repoSchema.methods.createTextfile = async function (
 	entry,
 	content = "",
 	overwrite = false,
@@ -2570,7 +2570,7 @@ repoSchema.methods.createTextfile = async function(
 		.catch(cb);
 };
 
-repoSchema.methods.createCFile = function(
+repoSchema.methods.createCFile = function (
 	parentId,
 	user,
 	fileName,
@@ -2649,7 +2649,7 @@ int func() {
 	);
 };
 
-repoSchema.methods.createHFile = function(
+repoSchema.methods.createHFile = function (
 	parentId,
 	user,
 	fileName,
@@ -2730,7 +2730,7 @@ int func();
 	);
 };
 
-repoSchema.methods.createLinkerFile = function(
+repoSchema.methods.createLinkerFile = function (
 	parentId,
 	user,
 	fileName,
@@ -2805,7 +2805,7 @@ repoSchema.methods.createLinkerFile = function(
 	);
 };
 
-repoSchema.methods.createStartupFile = function(
+repoSchema.methods.createStartupFile = function (
 	parentId,
 	user,
 	fileName,
@@ -2880,7 +2880,7 @@ repoSchema.methods.createStartupFile = function(
 	);
 };
 
-repoSchema.methods.createFSM = function(
+repoSchema.methods.createFSM = function (
 	parentId,
 	user,
 	fsmName,
@@ -2961,7 +2961,7 @@ repoSchema.methods.createFSM = function(
 	);
 };
 
-repoSchema.methods.createSOC = function(
+repoSchema.methods.createSOC = function (
 	parentId,
 	user,
 	socName,
@@ -3042,7 +3042,7 @@ repoSchema.methods.createSOC = function(
 	);
 };
 
-repoSchema.methods.createSYS = function(
+repoSchema.methods.createSYS = function (
 	parentId,
 	user,
 	sysName,
@@ -3123,7 +3123,7 @@ repoSchema.methods.createSYS = function(
 	);
 };
 
-repoSchema.methods.createImageEntry = function(
+repoSchema.methods.createImageEntry = function (
 	parentId,
 	user,
 	imageName,
@@ -3143,7 +3143,7 @@ repoSchema.methods.createImageEntry = function(
 	});
 };
 
-repoSchema.methods.createBinaryEntry = function(
+repoSchema.methods.createBinaryEntry = function (
 	parentId,
 	user,
 	fileName,
@@ -3163,7 +3163,7 @@ repoSchema.methods.createBinaryEntry = function(
 	});
 };
 
-repoSchema.methods.createFolder = async function(
+repoSchema.methods.createFolder = async function (
 	folder,
 	overwrite = false,
 	cb
@@ -3223,7 +3223,7 @@ repoSchema.methods.createFolder = async function(
 					} catch (err) {
 						createdFolder
 							.deleteEntry()
-							.then(() => {})
+							.then(() => { })
 							.catch(console.error);
 						return reject(err);
 					}
@@ -3240,7 +3240,7 @@ repoSchema.methods.createFolder = async function(
 		.catch(cb);
 };
 
-repoSchema.methods.createAnchorFolder = async function(
+repoSchema.methods.createAnchorFolder = async function (
 	folder,
 	overwrite = false,
 	cb
@@ -3249,7 +3249,7 @@ repoSchema.methods.createAnchorFolder = async function(
 	return this.createFolder(folder, overwrite, cb);
 };
 
-repoSchema.methods.createRoot = async function(remoteRoot, cb) {
+repoSchema.methods.createRoot = async function (remoteRoot, cb) {
 	const Repo = require("../controllers/repo");
 	if (typeof remoteRoot === "function") {
 		cb = remoteRoot;
@@ -3291,62 +3291,112 @@ repoSchema.methods.createRoot = async function(remoteRoot, cb) {
 };
 
 
-repoSchema.methods.relocateMultiple = async function({entryId, targetId, overwrite, copy=false, cb}) {
-try{
-	if (overwrite === null) {
-		overwrite = false;
-	}
-	if (!Array.isArray(entryId)) {
-		entryId = [entryId];
-	}
-	if (typeof overwrite === "function") {
-		cb = overwrite;
-		overwrite = false;
-	}
-	
-	let allFolders = await this.p.getEntries({ handler: EntryType.Folder });
+repoSchema.methods.relocateMultiple = async function ({ entryId, targetId, overwrite, copy = false, cb }) {
+	try {
+		if (overwrite === null) {
+			overwrite = false;
+		}
+		if (!Array.isArray(entryId)) {
+			entryId = [entryId];
+		}
+		if (typeof overwrite === "function") {
+			cb = overwrite;
+			overwrite = false;
+		}
 
-	const foldersMap = {};
-	allFolders.forEach(elem => {
-		return (foldersMap[elem.id] = elem);
-	});
+		let allFolders = await this.p.getEntries({ handler: EntryType.Folder });
 
-	const allEntriesQuery = [];
-	for (let el of Array.from(entryId)) {
-		if (typeof el !== "string") {
-			return cb({
-				error: "Invalid entry."
+		const foldersMap = {};
+		allFolders.forEach(elem => {
+			return (foldersMap[elem.id] = elem);
+		});
+
+		const allEntriesQuery = [];
+		for (let el of Array.from(entryId)) {
+			if (typeof el !== "string") {
+				return cb({
+					error: "Invalid entry."
+				});
+			}
+			allEntriesQuery.push({
+				_id: el
 			});
 		}
-		allEntriesQuery.push({
-			_id: el
-		});
-	}
 
-	let allEntries = await self.p.getEntries({ $or: allEntriesQuery });
+		let allEntries = await self.p.getEntries({ $or: allEntriesQuery });
 
-	const processedItems = [];
-	const failedItems = [];
-	const failErrors = [];
+		const processedItems = [];
+		const failedItems = [];
+		const failErrors = [];
 
-	const action = copy ? "copyTo" : "moveTo";
+		const action = copy ? "copyTo" : "moveTo";
 
-	let recurseEntry = async (entry, targetId) => {
-		await entry.p[action](targetId, overwrite, false).then(async processedItem =>{
-			if (allEntriesMap[entry._id.toString()]) {
-				processedItem.isTarget = true;
+		let recurseEntry = async (entry, targetId) => {
+			await entry.p[action](targetId, overwrite, false).then(async processedItem => {
+				if (allEntriesMap[entry._id.toString()]) {
+					processedItem.isTarget = true;
+				} else {
+					processedItem.isTarget = false;
+				}
+				processedItem.original = entry._id;
+				processedItems.push(processedItem);
+				if (entry.handler === EntryType.Folder) {
+					return;
+				}
+
+				let allChildren = await this.p.getEntries({ parent: entry._id });
+				let validChildren = allChildren.filter(child => child.id !== self.buildDir &&
+					![
+						EntryType.UnkownEntry,
+						EntryType.RepoRoot,
+						EntryType.NetlistFile,
+						EntryType.VCDFile,
+						EntryType.VVPFile,
+						EntryType.STA,
+						EntryType.SynthesisReport,
+						EntryType.IP
+					].includes(child.handler)
+				);
+
+				for (let child of validChildren) {
+					await recurseEntry(child, processedItem._id);
+				}
+			}).catch(err => {
+				failedItems.push(entry);
+				failErrors.push(err);
+			});
+		};
+
+		if (!allEntries.length) {
+			return cb({
+				error: "No entries to copy/move."
+			});
+		}
+
+		let allEntriesMap = {};
+		let allNames = {};
+		let isConflict = false;
+
+		allEntries.forEach(elem => {
+			allEntriesMap[elem.id] = elem;
+			if (allNames[elem.title]) {
+				if (!isConflict) {
+					return (isConflict = elem.title);
+				}
 			} else {
-				processedItem.isTarget = false;
+				return (allNames[elem.title] = true);
 			}
-			processedItem.original = entry._id;
-			processedItems.push(processedItem);
-			if (entry.handler === EntryType.Folder) {
-				return;
-			}
+		});
+		if (isConflict) {
+			throw ({
+				error: `Cannot copy/move more than one file with the same name "${isConflict}" to the same destination.`
+			});
+		}
 
-			let allChildren = await this.p.getEntries({ parent: entry._id });
-			let validChildren = allChildren.filter(child=> child.id !== self.buildDir && 
-				![
+		for (elem of Array.from(allEntries)) {
+			if (
+				elem._id.toString() === self.buildDir ||
+				[
 					EntryType.UnkownEntry,
 					EntryType.RepoRoot,
 					EntryType.NetlistFile,
@@ -3355,103 +3405,53 @@ try{
 					EntryType.STA,
 					EntryType.SynthesisReport,
 					EntryType.IP
-				].includes(child.handler)
-			);
-
-			for (let child of validChildren) {
-				await recurseEntry(child, processedItem._id);
-			}
-		}).catch(err=> {
-			failedItems.push(entry);
-			failErrors.push(err);
-		});
-	};
-	
-	if (!allEntries.length) {
-		return cb({
-			error: "No entries to copy/move."
-		});
-	}
-
-	let allEntriesMap = {};
-	let allNames = {};
-	let isConflict = false;
-
-	allEntries.forEach(elem => {
-		allEntriesMap[elem.id] = elem;
-		if (allNames[elem.title]) {
-			if (!isConflict) {
-				return (isConflict = elem.title);
-			}
-		} else {
-			return (allNames[elem.title] = true);
-		}
-	});
-	if (isConflict) {
-		throw ({
-			error: `Cannot copy/move more than one file with the same name "${isConflict}" to the same destination.`
-		});
-	}
-
-	for (elem of Array.from(allEntries)) {
-		if (
-			elem._id.toString() === self.buildDir ||
-			[
-				EntryType.UnkownEntry,
-				EntryType.RepoRoot,
-				EntryType.NetlistFile,
-				EntryType.VCDFile,
-				EntryType.VVPFile,
-				EntryType.STA,
-				EntryType.SynthesisReport,
-				EntryType.IP
-			].includes(elem.handler)
-		) {
-			throw ({
-				error: `Cannot copy/move "${elem.title}".`
-			});
-		}
-		let elemParent = foldersMap[elem.parent.toString()];
-		while (elemParent) {
-			if (allEntriesMap[elemParent._id.toString()]) {
+				].includes(elem.handler)
+			) {
 				throw ({
-					error: `Cannot copy/move the entry "${
-						elem.title
-					}" with one of its parent directories "${
-						elemParent.title
-					}" at the same time.`
+					error: `Cannot copy/move "${elem.title}".`
 				});
 			}
-			elemParent =
-				foldersMap[elemParent.parent.toString()];
+			let elemParent = foldersMap[elem.parent.toString()];
+			while (elemParent) {
+				if (allEntriesMap[elemParent._id.toString()]) {
+					throw ({
+						error: `Cannot copy/move the entry "${
+							elem.title
+							}" with one of its parent directories "${
+							elemParent.title
+							}" at the same time.`
+					});
+				}
+				elemParent =
+					foldersMap[elemParent.parent.toString()];
+			}
 		}
+
+		for (let entry of allEntries) {
+			await recurseEntry(entry, targetId, callback);
+		}
+
+		return cb(
+			null,
+			processedItems,
+			failedItems,
+			failErrors
+		);
+
+	} catch (err) {
+		return cb(err);
 	}
-
-	for (let entry of allEntries) {
-		await recurseEntry(entry, targetId, callback);
-	}
-
-	return cb(
-		null,
-		processedItems,
-		failedItems,
-		failErrors
-	);
-
-} catch (err) {
-	return cb(err);
-}
 };
 
-repoSchema.methods.moveMultiple = function(entryId, targetId, overwrite, cb) {
+repoSchema.methods.moveMultiple = function (entryId, targetId, overwrite, cb) {
 	this.relocateMultiple({ entryId, targetId, overwrite, copy: false, cb });
 }
 
-repoSchema.methods.copyMultiple = function(entryId, targetId, overwrite, cb) {
+repoSchema.methods.copyMultiple = function (entryId, targetId, overwrite, cb) {
 	this.relocateMultiple({ entryId, targetId, overwrite, copy: true, cb });
 }
 
-repoSchema.methods.moveEntry = function(entryId, targetId, overwrite, cb) {
+repoSchema.methods.moveEntry = function (entryId, targetId, overwrite, cb) {
 	if (overwrite == null) {
 		overwrite = false;
 	}
@@ -3465,7 +3465,7 @@ repoSchema.methods.moveEntry = function(entryId, targetId, overwrite, cb) {
 		{
 			_id: entryId
 		},
-		function(err, itemEntry) {
+		function (err, itemEntry) {
 			if (err) {
 				return cb(err);
 			} else if (!itemEntry) {
@@ -3479,7 +3479,7 @@ repoSchema.methods.moveEntry = function(entryId, targetId, overwrite, cb) {
 	);
 };
 
-repoSchema.methods.copyEntry = function(entryId, targetId, overwrite, cb) {
+repoSchema.methods.copyEntry = function (entryId, targetId, overwrite, cb) {
 	if (overwrite == null) {
 		overwrite = false;
 	}
@@ -3493,7 +3493,7 @@ repoSchema.methods.copyEntry = function(entryId, targetId, overwrite, cb) {
 		{
 			_id: entryId
 		},
-		function(err, itemEntry) {
+		function (err, itemEntry) {
 			if (err) {
 				return cb(err);
 			} else if (!itemEntry) {
@@ -3507,7 +3507,7 @@ repoSchema.methods.copyEntry = function(entryId, targetId, overwrite, cb) {
 	);
 };
 
-repoSchema.methods.deleteEntry = async function(
+repoSchema.methods.deleteEntry = async function (
 	entryId,
 	overwrite = false,
 	cb
@@ -3536,84 +3536,66 @@ repoSchema.methods.deleteEntry = async function(
 		.catch(cb);
 };
 
-repoSchema.methods.deleteMultiple = function(entryIds, overwrite, cb) {
+repoSchema.methods.deleteMultiple = async function (entryIds, overwrite, cb) {
 	if (overwrite == null) {
 		overwrite = false;
 	}
+
 	const deletedItems = [];
 	const failedItems = [];
 	const failErrors = [];
-	return async.each(
-		entryIds,
-		(entryId, callback) => {
-			return this.getEntry(
-				{
+
+	for (let entryId of entryIds) {
+		try {
+			let entry = await this.p.getEntry({ _id: entryId }).catch(err=> {
+				throw { error: err, entry: entry ?? { _id: entryId }};
+			});
+	
+			if (!entry) {
+				throw { entry: {
 					_id: entryId
-				},
-				(err, entry) => {
-					if (err) {
-						failedItems.push(
-							entry
-								? entry
-								: {
-										_id: entryId
-								  }
-						);
-						failErrors.push(err);
-						return callback();
-					} else if (!entry) {
-						failedItems.push({
-							_id: entryId
-						});
-						failErrors.push({
-							error: `Item ${entryId} not found`
-						});
-						return callback();
-					} else if (
-						entry.access <= EntryAccess.ReadOnly &&
-						![
-							EntryType.NetlistFile,
-							EntryType.TextFile,
-							EntryType.VCDFile,
-							EntryType.SynthesisReport,
-							EntryType.IP,
-							EntryType.BinaryFile
-						].includes(entry.handler)
-					) {
-						failedItems.push(entry);
-						failErrors.push({
-							error: "Cannot delete read-only entry."
-						});
-						return callback();
-					} else {
-						return this.deleteEntry(
-							entry._id,
-							false,
-							(err, deletedItem) => {
-								if (err) {
-									failedItems.push(entry);
-									failErrors.push(err);
-									return callback();
-								} else {
-									deletedItems.push(deletedItem);
-									return callback();
-								}
-							}
-						);
-					}
-				}
-			);
-		},
-		err => {
-			if (err) {
-				return cb(err);
+				}, error: {
+					error: `Item ${entryId} not found`
+				}};
 			}
-			return cb(null, deletedItems, failedItems, failErrors);
+			
+			if (
+				entry.access <= EntryAccess.ReadOnly &&
+				![
+					EntryType.NetlistFile,
+					EntryType.TextFile,
+					EntryType.VCDFile,
+					EntryType.SynthesisReport,
+					EntryType.IP,
+					EntryType.BinaryFile
+				].includes(entry.handler)
+			) {
+				throw { entry, error: {error: "Cannot delete read-only entry."} };x
+			}
+
+			console.log("Here?")
+	
+			let deletedItem = await this.p.deleteEntry(
+				entry._id,
+				false
+			).catch(err => {
+				throw { error: err, entry: entry };
+			});
+
+			console.log("Here 2?")
+	
+			deletedItems.push(deletedItem);
+		} catch(obj) {
+			let { error, entry } = obj;
+			failErrors.push(err);
+			failedItems.push(entry);
 		}
-	);
+	}
+
+	return cb(null, deletedItems, failedItems, failErrors);
 };
 
-repoSchema.methods.duplicateEntry = function(entryId, newname, overwrite, cb) {
+repoSchema.methods.duplicateEntry = function (entryId, newname, overwrite, cb) {
 	if (overwrite == null) {
 		overwrite = false;
 	}
@@ -3629,7 +3611,7 @@ repoSchema.methods.duplicateEntry = function(entryId, newname, overwrite, cb) {
 		{
 			_id: entryId
 		},
-		function(err, itemEntry) {
+		function (err, itemEntry) {
 			if (err) {
 				return cb(err);
 			} else if (!itemEntry) {
@@ -3643,7 +3625,7 @@ repoSchema.methods.duplicateEntry = function(entryId, newname, overwrite, cb) {
 	);
 };
 
-repoSchema.methods.renameEntry = function(entryId, newname, overwrite, cb) {
+repoSchema.methods.renameEntry = function (entryId, newname, overwrite, cb) {
 	if (overwrite == null) {
 		overwrite = false;
 	}
@@ -3659,7 +3641,7 @@ repoSchema.methods.renameEntry = function(entryId, newname, overwrite, cb) {
 		{
 			_id: entryId
 		},
-		function(err, itemEntry) {
+		function (err, itemEntry) {
 			if (err) {
 				return cb(err);
 			} else if (!itemEntry) {
@@ -3673,13 +3655,13 @@ repoSchema.methods.renameEntry = function(entryId, newname, overwrite, cb) {
 	);
 };
 
-repoSchema.methods.updateEntryAttributes = function(entryId, newAttrs, cb) {
+repoSchema.methods.updateEntryAttributes = function (entryId, newAttrs, cb) {
 
 	return this.getEntry(
 		{
 			_id: entryId
 		},
-		function(err, itemEntry) {
+		function (err, itemEntry) {
 			if (err) {
 				return cb(err);
 			} else if (!itemEntry) {
@@ -3697,7 +3679,7 @@ repoSchema.methods.updateEntryAttributes = function(entryId, newAttrs, cb) {
 	);
 };
 
-repoSchema.methods.updateEntryData = function(entryId, newData, cb) {
+repoSchema.methods.updateEntryData = function (entryId, newData, cb) {
 	const Repo = require("../controllers/repo");
 	const thisId = this._id;
 
@@ -3705,7 +3687,7 @@ repoSchema.methods.updateEntryData = function(entryId, newData, cb) {
 		{
 			_id: entryId
 		},
-		function(err, itemEntry) {
+		function (err, itemEntry) {
 			if (err) {
 				return cb(err);
 			} else if (!itemEntry) {
@@ -3723,7 +3705,7 @@ repoSchema.methods.updateEntryData = function(entryId, newData, cb) {
 	);
 };
 
-repoSchema.methods.updateFileContent = function(
+repoSchema.methods.updateFileContent = function (
 	entryId,
 	newContent,
 	overwrite,
@@ -3747,7 +3729,7 @@ repoSchema.methods.updateFileContent = function(
 		{
 			_id: entryId
 		},
-		function(err, itemEntry) {
+		function (err, itemEntry) {
 			if (err) {
 				return cb(err);
 			} else if (!itemEntry) {
@@ -3813,7 +3795,7 @@ repoSchema.methods.updateFileContent = function(
 	);
 };
 
-repoSchema.methods.isReadable = async function(userId, cb) {
+repoSchema.methods.isReadable = async function (userId, cb) {
 	const Repo = require("../controllers/repo");
 	return new Promise(async (resolve, reject) => {
 		if (userId == null) {
@@ -3841,7 +3823,7 @@ repoSchema.methods.isReadable = async function(userId, cb) {
 		.catch(cb);
 };
 
-repoSchema.methods.isWriteable = function(userId, cb) {
+repoSchema.methods.isWriteable = function (userId, cb) {
 	const Repo = require("../controllers/repo");
 	return new Promise(async (resolve, reject) => {
 		if (userId == null) {
@@ -3869,7 +3851,7 @@ repoSchema.methods.isWriteable = function(userId, cb) {
 		.catch(cb);
 };
 
-repoSchema.methods.setTopModule = function(entryId, module, cb) {
+repoSchema.methods.setTopModule = function (entryId, module, cb) {
 	const Repo = require("../controllers/repo");
 	const Synthesizer = require("../modules/synthesizer");
 
@@ -3879,7 +3861,7 @@ repoSchema.methods.setTopModule = function(entryId, module, cb) {
 		{
 			_id: entryId
 		},
-		function(err, item) {
+		function (err, item) {
 			if (err) {
 				return cb(err);
 			} else if (!item) {
@@ -3891,7 +3873,7 @@ repoSchema.methods.setTopModule = function(entryId, module, cb) {
 					error: "The target file is not a verilog module file."
 				});
 			} else {
-				return Parser.moduleExistsInFile(entryId, module, function(
+				return Parser.moduleExistsInFile(entryId, module, function (
 					err,
 					exists
 				) {
@@ -3901,7 +3883,7 @@ repoSchema.methods.setTopModule = function(entryId, module, cb) {
 						return cb({
 							error: `Cannot find the module ${module} in ${
 								item.title
-							}.`
+								}.`
 						});
 					} else {
 						return Repo.updateRepo(
@@ -3912,7 +3894,7 @@ repoSchema.methods.setTopModule = function(entryId, module, cb) {
 								topModule: module,
 								topModuleEntry: item._id
 							},
-							function(err, updatedRepo) {
+							function (err, updatedRepo) {
 								if (err) {
 									return cb(err);
 								} else {
@@ -3930,17 +3912,17 @@ repoSchema.methods.setTopModule = function(entryId, module, cb) {
 	);
 };
 
-repoSchema.methods.getRole = function(userId, cb) {
+repoSchema.methods.getRole = function (userId, cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.getRepoRole(this._id, userId, cb);
 };
 
-repoSchema.methods.getRoles = function(cb) {
+repoSchema.methods.getRoles = function (cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.getRepoRoles(this._id, cb);
 };
 
-repoSchema.methods.getRoleEntry = function(query, cb) {
+repoSchema.methods.getRoleEntry = function (query, cb) {
 	if (query == null) {
 		query = {};
 	}
@@ -3949,7 +3931,7 @@ repoSchema.methods.getRoleEntry = function(query, cb) {
 	return Repo.getRepoRoleEntry(query, cb);
 };
 
-repoSchema.methods.getRoleEntries = function(query, cb) {
+repoSchema.methods.getRoleEntries = function (query, cb) {
 	if (query == null) {
 		query = {};
 	}
@@ -3958,12 +3940,12 @@ repoSchema.methods.getRoleEntries = function(query, cb) {
 	return Repo.getRepoRoleEntries(query, cb);
 };
 
-repoSchema.methods.getContributors = function(cb) {
+repoSchema.methods.getContributors = function (cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.getRepoContributors(this, cb);
 };
 
-repoSchema.methods.authorize = async function(username, accessLevel, cb) {
+repoSchema.methods.authorize = async function (username, accessLevel, cb) {
 	const User = require("../controllers/user");
 	const Repo = require("../controllers/repo");
 	const repoId = this._id;
@@ -4013,7 +3995,7 @@ repoSchema.methods.authorize = async function(username, accessLevel, cb) {
 		.catch(cb);
 };
 
-repoSchema.methods.deauthorize = async function(username, cb) {
+repoSchema.methods.deauthorize = async function (username, cb) {
 	const User = require("../controllers/user");
 	const Repo = require("../controllers/repo");
 	const repoId = this._id;
@@ -4053,51 +4035,51 @@ repoSchema.methods.deauthorize = async function(username, cb) {
 		.catch(cb);
 };
 
-repoSchema.methods.refresh = function(cb) {
+repoSchema.methods.refresh = function (cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.refreshRepo(this._id, cb);
 };
 
-repoSchema.methods.getFavorites = function(cb) {
+repoSchema.methods.getFavorites = function (cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.getRepoFavorites(this, cb);
 };
 
-repoSchema.methods.getWatches = function(cb) {
+repoSchema.methods.getWatches = function (cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.getRepoWatches(this, cb);
 };
 
-repoSchema.methods.favorite = function(userId, cb) {
+repoSchema.methods.favorite = function (userId, cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.favoriteRepo(this, userId, cb);
 };
 
-repoSchema.methods.watch = function(userId, cb) {
+repoSchema.methods.watch = function (userId, cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.watchRepo(this, userId, cb);
 };
 
-repoSchema.methods.isFavoritedFrom = function(userId, cb) {
+repoSchema.methods.isFavoritedFrom = function (userId, cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.isRepoFavoritedFrom(this, userId, cb);
 };
 
-repoSchema.methods.isWatchedFrom = function(userId, cb) {
+repoSchema.methods.isWatchedFrom = function (userId, cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.isRepoWatchedFrom(this, userId, cb);
 };
 
-repoSchema.methods.update = function(updates, cb) {
+repoSchema.methods.update = function (updates, cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.updateRepo(this._id, updates, cb);
 };
-repoSchema.methods.edit = function(updates, cb) {
+repoSchema.methods.edit = function (updates, cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.updateRepo(this._id, updates, cb);
 };
 
-repoSchema.methods.updateWorkspaceSettings = function(
+repoSchema.methods.updateWorkspaceSettings = function (
 	themeIndex,
 	fontSize,
 	cb
@@ -4106,12 +4088,12 @@ repoSchema.methods.updateWorkspaceSettings = function(
 	return Repo.updateRepoWorkspaceSettings(this._id, themeIndex, fontSize, cb);
 };
 
-repoSchema.methods.getEntryByPath = function(entryPath, cb) {
+repoSchema.methods.getEntryByPath = function (entryPath, cb) {
 	const thisRepo = this;
 	const filesTree = entryPath
 		.split("/")
 		.filter(filePath => filePath.trim() !== "");
-	return this.getRoot(function(err, rootEntry) {
+	return this.getRoot(function (err, rootEntry) {
 		if (err) {
 			return cb(err);
 		} else {
@@ -4123,7 +4105,7 @@ repoSchema.methods.getEntryByPath = function(entryPath, cb) {
 							parent: rootEntry._id,
 							title: fileName
 						},
-						function(err, entry) {
+						function (err, entry) {
 							if (err) {
 								return callback(err);
 							} else {
@@ -4135,13 +4117,13 @@ repoSchema.methods.getEntryByPath = function(entryPath, cb) {
 
 			filesTree.shift();
 
-			filesTree.forEach(function(fileName, ind) {
+			filesTree.forEach(function (fileName, ind) {
 				if (fileName == null || fileName.trim() === "") {
 					return;
 				}
 				return tasks.push(
 					((fileTitle, isLast) =>
-						function(parentEntry, callback) {
+						function (parentEntry, callback) {
 							if (parentEntry == null) {
 								return callback(null, null);
 							} else {
@@ -4150,7 +4132,7 @@ repoSchema.methods.getEntryByPath = function(entryPath, cb) {
 										parent: parentEntry._id,
 										title: fileTitle
 									},
-									function(err, entry) {
+									function (err, entry) {
 										if (err) {
 											return callback(err);
 										} else if (!entry) {
@@ -4164,7 +4146,7 @@ repoSchema.methods.getEntryByPath = function(entryPath, cb) {
 						})(fileName, ind === filesTree.length - 1)
 				);
 			});
-			return async.waterfall(tasks, function(err, result) {
+			return async.waterfall(tasks, function (err, result) {
 				if (err) {
 					return cb(err);
 				} else {
@@ -4175,7 +4157,7 @@ repoSchema.methods.getEntryByPath = function(entryPath, cb) {
 	});
 };
 
-repoSchema.methods.createVersion = function(versionData, cb) {
+repoSchema.methods.createVersion = function (versionData, cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.createRepoVersion(
 		{
@@ -4186,7 +4168,7 @@ repoSchema.methods.createVersion = function(versionData, cb) {
 	);
 };
 
-repoSchema.methods.getVersions = function(cb) {
+repoSchema.methods.getVersions = function (cb) {
 	const Repo = require("../controllers/repo");
 	return Repo.getRepoVersions(
 		{
@@ -4196,7 +4178,7 @@ repoSchema.methods.getVersions = function(cb) {
 	);
 };
 
-repoSchema.methods.getVersion = function(query, cb) {
+repoSchema.methods.getVersion = function (query, cb) {
 	query.repo = this._id;
 	const Repo = require("../controllers/repo");
 	return Repo.getRepoVersion(query, cb);
