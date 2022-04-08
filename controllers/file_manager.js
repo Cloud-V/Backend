@@ -43,16 +43,19 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
 
         const gfs = new Grid();
         console.log("GFS: ", gfs)
-        const inputStream = new Readable();
-        inputStream.push(content);
-        inputStream.push(null);
+        // const inputStream = new Readable();
+        // inputStream.push(content);
+        // inputStream.push(null);
         const outputSteam = gfs.createWriteStream({
             filename: fsName
         });
         console.log("outputSteam", outputSteam)
-        inputStream.pipe(outputSteam);
+        // inputStream.pipe(outputSteam);
 
+        outputSteam.write(content);
+        
         outputSteam.on("error", function (err) {
+            console.log("Error #1")
             if (err === undefined) {
                 return
             }
@@ -63,9 +66,11 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
         });
 
         outputSteam.on("close", async file => {
+            console.log("Closed #1")
             newFileEntry.fsId = file._id;
             try {
                 newFileEntry = await newFileEntry.save();
+                console.log("Saved #1")
                 return resolve(newFileEntry);
             } catch (err) {
                 return reject(
@@ -76,8 +81,6 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
                 );
             }
         });
-
-        return;
     })
         .then(wrapResolveCallback(cb))
         .catch(cb);
@@ -508,23 +511,16 @@ const getFileEntry = async (query, opts = {}, cb) => {
         cb = opts;
         opts = {};
     }
-    if (query == null) {
+    if (query == null) { //Shouldn't this return an error?
         query = {};
-    }
-    query.deleted = false;
-    const dbQuery2 = mongoose.model("RepoFile").find({});
 
-    let tempQuery = await dbQuery2.exec();
-    fs.writeFile(
-        "repoFileEntries.json",
-        JSON.stringify(tempQuery),
-        err => {
-            console.log("Error #010: ", err)
-        }
-    )
-    console.log("await dbQuery.exec():", tempQuery)
+    }
+
+    //repoEntry must be a string
+    // if (query.repoEntry)
+    //     query.repoEntry = `${query.repoEntry}`
+
     return new Promise(async (resolve, reject) => {
-        console.log("Query:", query)
         const dbQuery = mongoose.model("RepoFile").findOne(query);
         try {
             return resolve(await dbQuery.exec());
@@ -581,24 +577,23 @@ const getFileEntries = function (query, cb) {
 
 const getFileContent = async (repoEntry, cb) => {
     console.log("getFileContent")
-    console.log(new Error().stack)
     return new Promise(async (resolve, reject) => {
         try {
             let tempFileEntry = await getFileEntry({})
-            console.log("Temp File Entry", tempFileEntry)
+            // console.log("Temp File Entry", tempFileEntry)
             const fileEntry = await getFileEntry({
                 repoEntry: repoEntry._id
             });
-            console.log("Repo Entry Id", repoEntry._id)
-            console.log("Repo Entry", repoEntry)
+            // console.log("Repo Entry Id", repoEntry._id)
+            // console.log("Repo Entry", repoEntry)
             if (!fileEntry) {
-                console.log("File Entry #020", fileEntry)
+                // console.log("File Entry #020", fileEntry)
                 return reject({
                     error: "File entry not found 2!"
                 });
             }
             const content = await readFile(fileEntry.fsId);
-            console.log("All Content: ", content.toString())
+            // console.log("All Content: ", content.toString())
             return resolve(content);
         } catch (err) {
             return reject(err);
@@ -671,29 +666,27 @@ const readFile = async (fsId, cb) => {
         const stream = gfs.createReadStream({
             _id: fsId
         });
-        console.log("Stream3: ", fsId)
         stream.on("data", chunk => {
             content = content + chunk;
-            console.log("Current Chunck: ", chunk.toString())
         });
 
 
         stream.on("error", err => {
-            if (err === undefined) {
-                return
-            }
+            // if (err === undefined) {
+            //     return
+            // }
             console.error(err);
             return reject({
-                error: "Failed to retrieve file content."
+                error: "Failed to retrieve file content. 1"
             });
         });
-        stream.on("end", () => {
+        stream.on("close", () => {
             if (content == null) {
                 return reject({
-                    error: "Failed to retrieve file content."
+                    error: "Failed to retrieve file content. 2"
                 });
             } else {
-                console.log("End Here: ", content)
+                // console.log("End Here: ", content)
                 return resolve(content);
             }
         });

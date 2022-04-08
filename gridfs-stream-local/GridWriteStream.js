@@ -18,10 +18,9 @@ class GridWriteStream extends EventEmitter {
           self.emit("error", err);
           return;
         }
+        console.log("File Created 1: ", file)
         self.emit("close", file);
       });
-      self.emit("end", file);
-
     }).catch(err => {
       self.emit("error", err)
     });

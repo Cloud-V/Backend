@@ -29,6 +29,5 @@ Grid.prototype.remove = function (options, cb) {
     })
   }
   cb(null)
-  // return resolve({"File deleted successfully."});
 }
 module.exports = exports = Grid;
