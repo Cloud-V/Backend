@@ -1,0 +1,22 @@
+{
+    "name": "gridfs-stream-local",
+    "version": "0.1.0",
+    "description": "Local, mostly drop-in replacement to gridfs",
+    "main": "lib/index.js",
+    "repository": "https://github.com/Cloud-V/gridfs-stream-local",
+    "author": "Omar Diaa <omardiaa500@gmail.com>",
+    "license": "Apache-2.0",
+    "private": false,
+    "dependencies": {
+        "fs-extra": "^10.0.1",
+        "mongoose": "6.1"
+    },
+    "scripts": {
+        "pretty": "node ./node_modules/prettier/bin-prettier.js --tab-width 4 --write .",
+        "mongo": "node -e \"require('fs-extra').ensureDir('./mongo')\" && mongod --dbpath ./mongo",
+        "test": "node ./test.js"
+    },
+    "devDependencies": {
+        "prettier": "^2.6.2"
+    }
+}

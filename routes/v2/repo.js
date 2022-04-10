@@ -3101,11 +3101,7 @@ try {
 			throw { error: "Failed to delete items." };
 		});
 
-		console.log(deletedItems, failedItems, failedErrors);
-
 		const deletedItemsRes = [];
-		console.log("3. Delete Action")
-
 		deletedItems.forEach(elem => {
 			return deletedItemsRes.push({
 				fileId: elem._id,
@@ -3116,7 +3112,6 @@ try {
 				isTarget: elem.isTarget
 			});
 		});
-		console.log("4. Delete Action")
 
 		return res.status(200).json({
 			files: deletedItemsRes

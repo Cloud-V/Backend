@@ -28,8 +28,6 @@ Leave all the gridfs-stream code as is. All what you need to do is 2 things:
 
 ## Files Description
 
-Index.js: is the main program which tests both writing and reading files using Grid class.
-
 Gridfs Files:
 
 1. Grid.js: is the main class containing instances of GridWriteStream and GridReadStream
@@ -42,4 +40,5 @@ Database.js: is responsible for handling everything related to the database. In 
 2. Functions for reading and writing are created and exported.
 
 # License
+
 The Apache License, version 2.0. See `License`.

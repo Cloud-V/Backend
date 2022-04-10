@@ -7,8 +7,7 @@ const { EntryType } = require("../models/repo_entry");
 const _ = require("underscore");
 const fs = require("fs-extra");
 const tmp = require("tmp");
-// const Grid = require("gridfs-stream");
-const Grid = require("../gridfs-stream-local/Grid");
+const Grid = require("../modules/gridfs-stream-local/Grid");
 
 const rmdir = require("rimraf");
 const async = require("async");
