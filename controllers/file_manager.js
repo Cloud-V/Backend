@@ -41,20 +41,17 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
         });
 
         const gfs = new Grid();
-        console.log("GFS: ", gfs)
         // const inputStream = new Readable();
         // inputStream.push(content);
         // inputStream.push(null);
         const outputSteam = gfs.createWriteStream({
             filename: fsName
         });
-        console.log("outputSteam", outputSteam)
         // inputStream.pipe(outputSteam);
 
         outputSteam.write(content);
-        
+
         outputSteam.on("error", function (err) {
-            console.log("Error #1")
             if (err === undefined) {
                 return
             }
@@ -65,11 +62,9 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
         });
 
         outputSteam.on("close", async file => {
-            console.log("Closed #1")
             newFileEntry.fsId = file._id;
             try {
                 newFileEntry = await newFileEntry.save();
-                console.log("Saved #1")
                 return resolve(newFileEntry);
             } catch (err) {
                 return reject(
@@ -109,7 +104,6 @@ const createMediaFile = async ({ path, buffer }, metadata, cb) => {
         const outputStream = gfs.createWriteStream({
             filename: fsName
         });
-        console.log("Output Stream: ", outputStream)
         inputStream.pipe(outputStream);
 
         outputStream.on("error", async err => {
@@ -353,7 +347,6 @@ var clearFile = async (fsId, cb) => {
 };
 
 const checkFileExistence = (repoEntry, cb) => {
-    console.log("checkFileExistence")
     getFileEntry(
         {
             repoEntry: repoEntry._id
@@ -575,24 +568,18 @@ const getFileEntries = function (query, cb) {
 };
 
 const getFileContent = async (repoEntry, cb) => {
-    console.log("getFileContent")
     return new Promise(async (resolve, reject) => {
         try {
             let tempFileEntry = await getFileEntry({})
-            // console.log("Temp File Entry", tempFileEntry)
             const fileEntry = await getFileEntry({
                 repoEntry: repoEntry._id
             });
-            // console.log("Repo Entry Id", repoEntry._id)
-            // console.log("Repo Entry", repoEntry)
             if (!fileEntry) {
-                // console.log("File Entry #020", fileEntry)
                 return reject({
                     error: "File entry not found 2!"
                 });
             }
             const content = await readFile(fileEntry.fsId);
-            // console.log("All Content: ", content.toString())
             return resolve(content);
         } catch (err) {
             return reject(err);
@@ -603,7 +590,6 @@ const getFileContent = async (repoEntry, cb) => {
 };
 
 const getFileStream = (repoEntry, cb) => {
-    console.log("getFileStream")
     getFileEntry(
         {
             repoEntry: repoEntry._id
@@ -621,7 +607,6 @@ const getFileStream = (repoEntry, cb) => {
                 const stream = gfs.createReadStream({
                     _id: fileEntry.fsId
                 });
-                console.log("Stream2: ", fileEntry.fsId)
                 stream.run();
                 return cb(null, stream);
             }
@@ -645,7 +630,6 @@ const getMediaFileStream = (mediaEntry, cb) => {
             const stream = gfs.createReadStream({
                 _id: entry.fsId
             });
-            console.log("Stream1: ", entry.fsId)
             stream.run()
             return resolve(stream);
         } catch (err) {
@@ -685,7 +669,6 @@ const readFile = async (fsId, cb) => {
                     error: "Failed to retrieve file content. 2"
                 });
             } else {
-                // console.log("End Here: ", content)
                 return resolve(content);
             }
         });
@@ -2927,7 +2910,6 @@ const streamRepo = (repo, cb) => {
 }
 
 const cleanupFiles = function (query, cb) {
-    console.log("CleanupFiles called")
     if (query == null) {
         query = {};
     }
