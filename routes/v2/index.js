@@ -527,6 +527,7 @@ router.post("/edit", restrict, async (req, res, next) => {
 		}
 
 		const omitNull = !!req.query.nonull;
+		console.log("Request: ", req.body)
 
 		const {
 			displayName,
@@ -534,12 +535,14 @@ router.post("/edit", restrict, async (req, res, next) => {
 			about,
 			dashboardTour,
 			workspaceTour,
-			repositoryTour
+			repositoryTour,
+			gravatarEmail
 		} = req.body;
 		const updates = {
 			displayName,
 			personalURL,
-			about
+			about,
+			gravatarEmail
 		};
 		const tourUpdates = {
 			dashboardTour,

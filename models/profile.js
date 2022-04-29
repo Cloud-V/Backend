@@ -1,5 +1,5 @@
 const mongoose = require("../config/db");
-const { Schema }  = require("mongoose");
+const { Schema } = require("mongoose");
 const { ObjectId } = Schema;
 
 const profileSchema = new Schema({
@@ -18,6 +18,11 @@ const profileSchema = new Schema({
 	avatarURL: {
 		type: String,
 		default: ''
+	},
+
+	gravatarEmail: {
+		type: String,
+		required: false
 	},
 	displayName: {
 		type: String,
