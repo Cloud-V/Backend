@@ -31,7 +31,7 @@ const userSchema = new Schema(
 			lowercase: true,
 			trim: true,
 			validate: {
-				validator: async function(username) {
+				validator: async function (username) {
 					if (Array.from(prohibitedNames).includes(username)) {
 						throw Error.User.ProhibitedUsername.msg;
 					}
@@ -64,7 +64,7 @@ const userSchema = new Schema(
 			lowercase: true,
 			trim: true,
 			validate: {
-				validator: async function(email) {
+				validator: async function (email) {
 					if (!emailRegex().test(email)) {
 						return false;
 					}
@@ -131,6 +131,10 @@ const userSchema = new Schema(
 			required: true,
 			default: false
 		},
+		gravatarEmail: {
+			type: String,
+			required: false
+		},
 		google: {
 			id: {
 				type: String
@@ -185,11 +189,11 @@ const userSchema = new Schema(
 	}
 );
 
-userSchema.path("authType").validate(function(auth) {
+userSchema.path("authType").validate(function (auth) {
 	return _.values(AuthType).includes(auth);
 }, Error.User.InvalidAuthentication.msg);
 
-userSchema.path("type").validate(function(type) {
+userSchema.path("type").validate(function (type) {
 	return _.values(UserType).includes(type);
 }, Error.User.InvalidType.msg);
 
@@ -200,7 +204,7 @@ userSchema
 		Error.User.InvalidUsername.msg
 	);
 
-userSchema.methods.updateWorkspaceSettings = function(
+userSchema.methods.updateWorkspaceSettings = function (
 	themeIndex,
 	fontSize,
 	cb
@@ -209,7 +213,7 @@ userSchema.methods.updateWorkspaceSettings = function(
 	return User.updateUserWorkspaceSettings(this._id, themeIndex, fontSize, cb);
 };
 
-userSchema.methods.getProfile = function(cb) {
+userSchema.methods.getProfile = function (cb) {
 	const User = require("../controllers/user");
 	return User.getUserProfile(
 		{
@@ -219,7 +223,7 @@ userSchema.methods.getProfile = function(cb) {
 	);
 };
 
-userSchema.methods.isValidPassword = async function(password, cb) {
+userSchema.methods.isValidPassword = async function (password, cb) {
 	return new Promise(async (resolve, reject) => {
 		let same;
 		try {
