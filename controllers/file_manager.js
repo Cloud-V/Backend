@@ -39,8 +39,7 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
             encoding: fileData.encoding,
             extension: fileData.extension
         });
-
-        const gfs = new Grid();
+        const gfs = new Grid(dbfs);
         // const inputStream = new Readable();
         // inputStream.push(content);
         // inputStream.push(null);
@@ -98,7 +97,7 @@ const createMediaFile = async ({ path, buffer }, metadata, cb) => {
             extension: metadata.extension
         });
 
-        const gfs = new Grid();
+        const gfs = new Grid(dbfs);
 
         const inputStream = fs.createReadStream(filePath);
         const outputStream = gfs.createWriteStream({
@@ -170,7 +169,7 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
                 extension: fileData.extension
             });
 
-            const gfs = new Grid();
+            const gfs = new Grid(dbfs);
 
             const inputStream = new Readable();
             inputStream.push(content);
@@ -272,7 +271,7 @@ const updateFile = (repoEntry, newContent, cb) => {
                 });
             } else {
 
-                const gfs = new Grid();
+                const gfs = new Grid(dbfs);
                 const fsName =
                     shortid.generate() +
                     "_" +
@@ -326,7 +325,7 @@ const updateFile = (repoEntry, newContent, cb) => {
 
 var clearFile = async (fsId, cb) => {
     return new Promise(async (resolve, reject) => {
-        const gfs = new Grid();
+        const gfs = new Grid(dbfs);
         gfs.remove(
             {
                 _id: fsId
@@ -367,7 +366,7 @@ const checkFileExistence = (repoEntry, cb) => {
 
 var fileExists = function (fsId, cb) {
 
-    const gfs = new Grid();
+    const gfs = new Grid(dbfs);
     return gfs.exist(
         {
             _id: fsId
@@ -603,7 +602,7 @@ const getFileStream = (repoEntry, cb) => {
                 });
             } else {
 
-                const gfs = new Grid();
+                const gfs = new Grid(dbfs);
                 const stream = gfs.createReadStream({
                     _id: fileEntry.fsId
                 });
@@ -626,7 +625,7 @@ const getMediaFileStream = (mediaEntry, cb) => {
                 });
             }
 
-            const gfs = new Grid();
+            const gfs = new Grid(dbfs);
             const stream = gfs.createReadStream({
                 _id: entry.fsId
             });
@@ -643,8 +642,8 @@ const getMediaFileStream = (mediaEntry, cb) => {
 
 const readFile = async (fsId, cb) => {
     return new Promise(async (resolve, reject) => {
-        // const gfs = Grid(dbfs.db);
-        const gfs = new Grid();
+        // const gfs = Grid(dbfs);
+        const gfs = new Grid(dbfs);
         let content = "";
         const stream = gfs.createReadStream({
             _id: fsId
