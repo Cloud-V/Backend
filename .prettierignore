@@ -1,0 +1,7 @@
+/modules
+/build
+/mongo
+**/node_modules
+**/*.md
+**/*.yml
+**/*.yaml

@@ -9,6 +9,6 @@ const pub = redis.createClient(port, host, password);
 const sub = redis.createClient(port, host, password);
 
 module.exports = adapter({
-	pubClient: pub,
-	subClient: sub
+    pubClient: pub,
+    subClient: sub,
 });

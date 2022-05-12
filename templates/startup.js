@@ -143,5 +143,5 @@ clear_bss_done:
 .comm stack_bottom, Stack_Size, 16
 stack_top:
 `,
-    blank: ``
-}
+    blank: ``,
+};

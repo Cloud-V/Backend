@@ -54,5 +54,5 @@ SECTIONS {
        bss_end = .;
    } > ram
 }`,
-    blank: ``
-}
+    blank: ``,
+};

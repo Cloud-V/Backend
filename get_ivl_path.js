@@ -8,14 +8,14 @@ async function main() {
         process.stdout.write(process.env.IVL_PATH);
         return;
     }
-    let {stdout} = await promisify(exec)("which iverilog");
+    let { stdout } = await promisify(exec)("which iverilog");
     let path = stdout.trim();
     let isSymlink = await new Promise((resolve, reject) => {
         fs.lstat(path, (err, stats) => {
             if (err) {
                 reject(err);
             }
-            resolve(stats.isSymbolicLink())
+            resolve(stats.isSymbolicLink());
         });
     });
 
@@ -33,14 +33,14 @@ async function main() {
     } else if (dpkgResult) {
         let files = await promisify(exec)("dpkg -L iverilog");
         let fileList = files.stdout.split("\n");
-        let file = fileList.filter(file=> file.endsWith("/ivl"))[0];
+        let file = fileList.filter((file) => file.endsWith("/ivl"))[0];
         process.stdout.write(file);
     } else {
         throw "[FATAL WARNING] Could not find the IcarusVerilog IVL directory- Set it manually using the environment variable IVL_PATH.";
     }
 }
 
-main().catch(err => {
+main().catch((err) => {
     console.error(err);
-    process.exit(78)
+    process.exit(78);
 });

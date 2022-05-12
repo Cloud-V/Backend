@@ -10,11 +10,9 @@ const http = require("http");
 const coreCount = require("os").cpus().length;
 
 let main = () => {
-    console.log(`[${new Date().toISOString()}] Starting Cloud V...`)
-    global.workersCount = 
-        process.env.CLOUDV_JOBS ||
-        (coreCount > 1 ? coreCount : 2)
-        ;
+    console.log(`[${new Date().toISOString()}] Starting Cloud V...`);
+    global.workersCount =
+        process.env.CLOUDV_JOBS || (coreCount > 1 ? coreCount : 2);
     global.userCountKey = "usercount";
     global.userConnectionsKey = "userconn";
 
@@ -31,7 +29,9 @@ let main = () => {
 
     // Configure Socket.IO / Redis
     if (config.useSockets) {
-        console.log(`[${new Date().toISOString()}] Setting up sockets with Redis...`);
+        console.log(
+            `[${new Date().toISOString()}] Setting up sockets with Redis...`
+        );
         const redisClient = require("../config/redis");
         const io = (global.io = require("socket.io")(server));
         const { onConnect, onDisconnect } = require("../controllers/sockets");
@@ -57,7 +57,7 @@ let main = () => {
                 let invalidToken;
                 try {
                     invalidToken = await InvalidToken.findOne({
-                        token: token
+                        token: token,
                     }).exec();
                 } catch (e) {
                     console.error(e);
@@ -84,7 +84,7 @@ let main = () => {
                 let invalidToken;
                 try {
                     invalidToken = await InvalidToken.findOne({
-                        token: token
+                        token: token,
                     }).exec();
                 } catch (e) {
                     console.error(e);
@@ -93,7 +93,7 @@ let main = () => {
                 let socketUser;
                 try {
                     socketUser = await User.getUser({
-                        _id: decoded._id
+                        _id: decoded._id,
                     });
                 } catch (e) {
                     console.error(e);
@@ -102,9 +102,9 @@ let main = () => {
                 socket.client.user = socketUser;
                 onConnect(socket, socketUser);
             },
-            disconnect: socket => {
+            disconnect: (socket) => {
                 onDisconnect(socket);
-            }
+            },
         });
         if (cluster.isMaster) {
             redisClient.del(userConnectionsKey, redisClient.print);
@@ -112,14 +112,14 @@ let main = () => {
         const redisAdapter = require("../config/redis-adapter");
         io.adapter(redisAdapter);
     }
-    
 
     function onListening() {
         const addr = server.address();
-        const bind = typeof addr === "string" ?
-            "pipe " + addr :
-            "port " + addr.port;
-        console.log(`[${new Date().toISOString()}] Startup complete, awaiting requests...`)
+        const bind =
+            typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
+        console.log(
+            `[${new Date().toISOString()}] Startup complete, awaiting requests...`
+        );
     }
 
     function onError(error) {
@@ -127,11 +127,7 @@ let main = () => {
             throw error;
         }
 
-        const bind = typeof port === "string" ?
-            "Pipe " + port :
-            "Port " + port
-            ;
-
+        const bind = typeof port === "string" ? "Pipe " + port : "Port " + port;
         // handle specific listen errors with friendly messages
         switch (error.code) {
             case "EACCES":

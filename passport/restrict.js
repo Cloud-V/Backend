@@ -1,8 +1,8 @@
-module.exports = function(req, res, next) {
+module.exports = function (req, res, next) {
     if (req.isAuthenticated()) {
         if (!req.user.authComplete) {
             return res.status(401).json({
-                error: "Incomplete user"
+                error: "Incomplete user",
             });
         }
         return next();
@@ -11,6 +11,6 @@ module.exports = function(req, res, next) {
         req.session.afterAuth = req.originalUrl;
     }
     return res.status(401).json({
-        error: "Authentication required."
+        error: "Authentication required.",
     });
 };
