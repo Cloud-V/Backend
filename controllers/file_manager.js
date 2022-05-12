@@ -20,7 +20,7 @@ const {
     wrapResolveCallback,
     handleMongooseError,
     getMongooseId,
-    promiseSeries
+    promiseSeries,
 } = require("../modules/utils");
 
 const createFile = async (repoEntry, fileData, content = "", cb) => {
@@ -35,7 +35,7 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
             baseName: fileData.originalname,
             mimeType: fileData.mimetype,
             encoding: fileData.encoding,
-            extension: fileData.extension
+            extension: fileData.extension,
         });
         const gfs = Grid(dbfs.db);
 
@@ -43,21 +43,21 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
         inputStream.push(content);
         inputStream.push(null);
         const outputSteam = gfs.createWriteStream({
-            filename: fsName
+            filename: fsName,
         });
         inputStream.pipe(outputSteam);
 
-        outputSteam.on("error", function(err) {
+        outputSteam.on("error", function (err) {
             if (err === undefined) {
-                return
+                return;
             }
             console.error(err);
             return reject({
-                error: "An error occurred while writing the file."
+                error: "An error occurred while writing the file.",
             });
         });
 
-        return outputSteam.on("close", async file => {
+        return outputSteam.on("close", async (file) => {
             newFileEntry.fsId = file._id;
             try {
                 newFileEntry = await newFileEntry.save();
@@ -77,7 +77,7 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
 };
 
 // Buffer takes precedence over path.
-const createMediaFile = async ({path, buffer}, metadata, cb) => {
+const createMediaFile = async ({ path, buffer }, metadata, cb) => {
     const fileModel = require("../models/media_file").model;
     return new Promise(async (resolve, reject) => {
         let filePath = path;
@@ -85,35 +85,36 @@ const createMediaFile = async ({path, buffer}, metadata, cb) => {
             filePath = tmp.tmpNameSync();
             fs.writeFileSync(filePath, buffer);
         }
-        const fsName = shortid.generate() + "_" + Date.now() + "." + metadata.extension;
+        const fsName =
+            shortid.generate() + "_" + Date.now() + "." + metadata.extension;
         let newFileEntry = new fileModel({
             user: metadata.user,
             baseName: metadata.originalname,
             mimeType: metadata.mimetype,
             encoding: metadata.encoding,
-            extension: metadata.extension
+            extension: metadata.extension,
         });
         const gfs = Grid(dbfs.db);
 
         const inputStream = fs.createReadStream(filePath);
         const outputStream = gfs.createWriteStream({
-            filename: fsName
+            filename: fsName,
         });
         inputStream.pipe(outputStream);
 
-        outputStream.on("error", async err => {
+        outputStream.on("error", async (err) => {
             if (err === undefined) {
-                return
+                return;
             }
-            buffer && await fs.unlink(filePath);
+            buffer && (await fs.unlink(filePath));
             console.error(err);
             return reject({
-                error: "An error occurred while writing the file."
+                error: "An error occurred while writing the file.",
             });
         });
 
-        return outputStream.on("close", async file => {
-            buffer && await fs.unlink(filePath);
+        return outputStream.on("close", async (file) => {
+            buffer && (await fs.unlink(filePath));
             newFileEntry.fsId = file._id;
             try {
                 newFileEntry = await newFileEntry.save();
@@ -127,7 +128,9 @@ const createMediaFile = async ({path, buffer}, metadata, cb) => {
                 );
             }
         });
-    }).then(wrapResolveCallback(cb)).catch(cb);
+    })
+        .then(wrapResolveCallback(cb))
+        .catch(cb);
 };
 
 const duplicateFile = async (copiedItem, oldItem, cb) => {
@@ -136,7 +139,7 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
     return new Promise(async (resolve, reject) => {
         try {
             const fileData = await getFileEntry({
-                repoEntry: oldItem._id
+                repoEntry: oldItem._id,
             });
             if (!fileData) {
                 return resolve(true);
@@ -144,7 +147,7 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
             const content = await getFileContent(oldItem);
             if (typeof content === "undefined") {
                 return reject({
-                    error: "Undefined!"
+                    error: "Undefined!",
                 });
             }
             const fsName =
@@ -160,7 +163,7 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
                 baseName: fileData.baseName,
                 mimeType: fileData.mimeType,
                 encoding: fileData.encoding,
-                extension: fileData.extension
+                extension: fileData.extension,
             });
             const gfs = Grid(dbfs.db);
 
@@ -168,20 +171,20 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
             inputStream.push(content);
             inputStream.push(null);
             const outputSteam = gfs.createWriteStream({
-                filename: fsName
+                filename: fsName,
             });
             inputStream.pipe(outputSteam);
 
-            outputSteam.on("error", function(err) {
+            outputSteam.on("error", function (err) {
                 if (err === undefined) {
-                    return
+                    return;
                 }
                 console.error(err);
                 return reject({
-                    error: "An error occurred while writing the file."
+                    error: "An error occurred while writing the file.",
                 });
             });
-            outputSteam.on("close", async file => {
+            outputSteam.on("close", async (file) => {
                 newFileEntry.fsId = file._id;
                 try {
                     await newFileEntry.save();
@@ -207,14 +210,14 @@ const clearFileEntry = async (repoEntry, cb) => {
     return new Promise(async (resolve, reject) => {
         try {
             const fileEntry = await getFileEntry({
-                repoEntry: repoEntry._id
+                repoEntry: repoEntry._id,
             });
             if (!fileEntry) {
                 return resolve(true);
             }
             await clearFile(fileEntry.fsId);
             const deletedEntry = await updateFileEntry(fileEntry._id, {
-                deleted: true
+                deleted: true,
             });
             return resolve(deletedEntry);
         } catch (err) {
@@ -228,14 +231,14 @@ const clearMediaFileEntry = async (mediaEntry, cb) => {
     return new Promise(async (resolve, reject) => {
         try {
             const fileEntry = await getMediaFileEntry({
-                _id: getMongooseId(mediaEntry)
+                _id: getMongooseId(mediaEntry),
             });
             if (!fileEntry) {
                 return resolve(true);
             }
             await clearFile(fileEntry.fsId);
             const deletedEntry = await updateMediaFileEntry(fileEntry._id, {
-                deleted: true
+                deleted: true,
             });
             return resolve(deletedEntry);
         } catch (err) {
@@ -248,14 +251,14 @@ const clearMediaFileEntry = async (mediaEntry, cb) => {
 const updateFile = (repoEntry, newContent, cb) =>
     getFileEntry(
         {
-            repoEntry: repoEntry._id
+            repoEntry: repoEntry._id,
         },
-        function(err, fileEntry) {
+        function (err, fileEntry) {
             if (err) {
                 return cb(err);
             } else if (!fileEntry) {
                 return cb({
-                    error: "File not found!"
+                    error: "File not found!",
                 });
             } else {
                 const gfs = Grid(dbfs.db);
@@ -269,33 +272,33 @@ const updateFile = (repoEntry, newContent, cb) =>
                 inputStream.push(newContent);
                 inputStream.push(null);
                 const outputSteam = gfs.createWriteStream({
-                    filename: fsName
+                    filename: fsName,
                 });
                 inputStream.pipe(outputSteam);
 
-                outputSteam.on("error", function(err) {
+                outputSteam.on("error", function (err) {
                     if (err === undefined) {
-                        return
+                        return;
                     }
                     console.error(err);
                     return cb({
-                        error: "An error occurred while writing the file."
+                        error: "An error occurred while writing the file.",
                     });
                 });
 
-                return outputSteam.on("close", function(file) {
+                return outputSteam.on("close", function (file) {
                     const oldFsId = fileEntry.fsId;
                     return updateFileEntry(
                         fileEntry._id,
                         {
-                            fsId: file._id
+                            fsId: file._id,
                         },
-                        function(err, saveEntry) {
+                        function (err, saveEntry) {
                             if (err) {
                                 return cb(err);
                             } else {
                                 cb(null, fileEntry);
-                                return clearFile(oldFsId, function(err) {
+                                return clearFile(oldFsId, function (err) {
                                     if (err) {
                                         return console.error(err);
                                     }
@@ -313,12 +316,12 @@ var clearFile = async (fsId, cb) => {
         const gfs = Grid(dbfs.db);
         gfs.remove(
             {
-                _id: fsId
+                _id: fsId,
             },
-            function(err) {
+            function (err) {
                 if (err) {
                     return reject({
-                        error: "Failed to remove the file."
+                        error: "Failed to remove the file.",
                     });
                 } else {
                     return resolve(null);
@@ -333,14 +336,14 @@ var clearFile = async (fsId, cb) => {
 const checkFileExistence = (repoEntry, cb) =>
     getFileEntry(
         {
-            repoEntry: repoEntry._id
+            repoEntry: repoEntry._id,
         },
-        function(err, fileEntry) {
+        function (err, fileEntry) {
             if (err) {
                 return cb(err);
             } else if (!fileEntry) {
                 return cb({
-                    error: "File entry not found!"
+                    error: "File entry not found!",
                 });
             } else {
                 return fileExists(fileEntry.fsId, cb);
@@ -348,17 +351,17 @@ const checkFileExistence = (repoEntry, cb) =>
         }
     );
 
-var fileExists = function(fsId, cb) {
+var fileExists = function (fsId, cb) {
     const gfs = Grid(dbfs.db);
     return gfs.exist(
         {
-            _id: fsId
+            _id: fsId,
         },
-        function(err, found) {
+        function (err, found) {
             if (err) {
                 console.error(err);
                 return cb({
-                    error: "Failed to check for file existence."
+                    error: "Failed to check for file existence.",
                 });
             } else {
                 return cb(null, found);
@@ -372,11 +375,11 @@ const updateFileEntry = async (entryId, updates, cb) => {
         entryId = getMongooseId(entryId);
         try {
             let entry = await getFileEntry({
-                _id: entryId
+                _id: entryId,
             });
             if (!entry) {
                 return reject({
-                    error: "Cannot find targeted entry."
+                    error: "Cannot find targeted entry.",
                 });
             }
             const validPaths = _.pickSchema(
@@ -410,11 +413,11 @@ const updateMediaFileEntry = async (entryId, updates, cb) => {
         entryId = getMongooseId(entryId);
         try {
             let entry = await getMediaFileEntry({
-                _id: entryId
+                _id: entryId,
             });
             if (!entry) {
                 return reject({
-                    error: "Cannot find targeted entry."
+                    error: "Cannot find targeted entry.",
                 });
             }
             const validPaths = _.pickSchema(
@@ -443,30 +446,30 @@ const updateMediaFileEntry = async (entryId, updates, cb) => {
         .catch(cb);
 };
 
-const renameFile = function(repoEntry, newname, cb) {
+const renameFile = function (repoEntry, newname, cb) {
     let baseName = path.basename(newname);
     let extension = path.extname(newname);
     baseName = path.basename(newname, extension);
     extension = extension.substr(1);
     return getFileEntry(
         {
-            repoEntry: repoEntry._id
+            repoEntry: repoEntry._id,
         },
-        function(err, fileEntry) {
+        function (err, fileEntry) {
             if (err) {
                 return cb(err);
             } else if (!fileEntry) {
                 return cb({
-                    error: "Cannot retrieve file entry."
+                    error: "Cannot retrieve file entry.",
                 });
             } else {
                 return updateFileEntry(
                     fileEntry._id,
                     {
                         baseName,
-                        extension
+                        extension,
                     },
-                    function(err, updatedFileEntry) {
+                    function (err, updatedFileEntry) {
                         if (err) {
                             return cb(err);
                         } else {
@@ -495,7 +498,7 @@ const getFileEntry = async (query, opts = {}, cb) => {
         } catch (err) {
             console.error(err);
             return reject({
-                error: "An error occurred while retrieving the file entry."
+                error: "An error occurred while retrieving the file entry.",
             });
         }
     })
@@ -518,7 +521,7 @@ const getMediaFileEntry = async (query, opts = {}, cb) => {
         } catch (err) {
             console.error(err);
             return reject({
-                error: "An error occurred while retrieving the file entry."
+                error: "An error occurred while retrieving the file entry.",
             });
         }
     })
@@ -526,17 +529,17 @@ const getMediaFileEntry = async (query, opts = {}, cb) => {
         .catch(cb);
 };
 
-const getFileEntries = function(query, cb) {
+const getFileEntries = function (query, cb) {
     if (query == null) {
         query = {};
     }
     query.deleted = false;
 
-    return mongoose.model("RepoFile").find(query, function(err, fileEntries) {
+    return mongoose.model("RepoFile").find(query, function (err, fileEntries) {
         if (err) {
             console.error(err);
             return cb({
-                error: "An error occurred while retrieving the file entries."
+                error: "An error occurred while retrieving the file entries.",
             });
         } else {
             return cb(null, fileEntries);
@@ -548,11 +551,11 @@ const getFileContent = async (repoEntry, cb) => {
     return new Promise(async (resolve, reject) => {
         try {
             const fileEntry = await getFileEntry({
-                repoEntry: repoEntry._id
+                repoEntry: repoEntry._id,
             });
             if (!fileEntry) {
                 return reject({
-                    error: "File entry not found!"
+                    error: "File entry not found!",
                 });
             }
             const content = await readFile(fileEntry.fsId);
@@ -570,16 +573,16 @@ const getMediaFileStream = (mediaEntry, cb) => {
         try {
             const entryId = getMongooseId(mediaEntry);
             const entry = await getMediaFileEntry({
-                _id: entryId
+                _id: entryId,
             });
             if (!entry) {
                 return reject({
-                    error: "Media entry not found"
+                    error: "Media entry not found",
                 });
             }
             const gfs = Grid(dbfs.db);
             const stream = gfs.createReadStream({
-                _id: entry.fsId
+                _id: entry.fsId,
             });
             return resolve(stream);
         } catch (err) {
@@ -592,19 +595,19 @@ const getMediaFileStream = (mediaEntry, cb) => {
 const getFileStream = (repoEntry, cb) =>
     getFileEntry(
         {
-            repoEntry: repoEntry._id
+            repoEntry: repoEntry._id,
         },
-        function(err, fileEntry) {
+        function (err, fileEntry) {
             if (err) {
                 return cb(err);
             } else if (!fileEntry) {
                 return cb({
-                    error: "File entry not found!"
+                    error: "File entry not found!",
                 });
             } else {
                 const gfs = Grid(dbfs.db);
                 const stream = gfs.createReadStream({
-                    _id: fileEntry.fsId
+                    _id: fileEntry.fsId,
                 });
                 return cb(null, stream);
             }
@@ -616,23 +619,23 @@ const readFile = async (fsId, cb) => {
         const gfs = Grid(dbfs.db);
         let content = "";
         const stream = gfs.createReadStream({
-            _id: fsId
+            _id: fsId,
         });
-        stream.on("data", chunk => (content = content + chunk));
+        stream.on("data", (chunk) => (content = content + chunk));
 
-        stream.on("error", err => {
+        stream.on("error", (err) => {
             if (err === undefined) {
-                return
+                return;
             }
             console.error(err);
             return reject({
-                error: "Failed to retrieve file content."
+                error: "Failed to retrieve file content.",
             });
         });
         return stream.on("end", () => {
             if (content == null) {
                 return reject({
-                    error: "Failed to retrieve file content."
+                    error: "Failed to retrieve file content.",
                 });
             } else {
                 return resolve(content);
@@ -643,7 +646,7 @@ const readFile = async (fsId, cb) => {
         .catch(cb);
 };
 
-var writeTempSimulationModules = function(
+var writeTempSimulationModules = function (
     repo,
     testbenchId,
     simulationTime,
@@ -653,11 +656,11 @@ var writeTempSimulationModules = function(
 ) {
     if (depth >= 3) {
         return cb({
-            error: "Cannot simulate IP depth > 3"
+            error: "Cannot simulate IP depth > 3",
         });
     }
     const Repo = require("./repo");
-    const testbenchCB = function(testbenchEntry) {
+    const testbenchCB = function (testbenchEntry) {
         let dirName = shortid.generate() + "_" + Date.now();
         let fullPath = path.join(process.cwd(), `${dir}${dirName}`);
         fullPath = `${fullPath}/`;
@@ -666,27 +669,27 @@ var writeTempSimulationModules = function(
             fullPath = dir;
         }
         const mkdirCB = () =>
-            repo.getRoot(function(err, rootEntry) {
+            repo.getRoot(function (err, rootEntry) {
                 if (err) {
                     return cb(err);
                 } else {
                     return repo.getEntries(
                         {
-                            handler: EntryType.Folder
+                            handler: EntryType.Folder,
                         },
-                        function(err, folderEntries) {
+                        function (err, folderEntries) {
                             if (err) {
                                 return cb(err);
                             } else {
                                 const idMap = {};
                                 idMap[rootEntry._id.toString()] = rootEntry;
                                 folderEntries.forEach(
-                                    folder =>
+                                    (folder) =>
                                         (idMap[folder._id.toString()] = folder)
                                 );
                                 const folderPaths = {};
                                 folderPaths[rootEntry._id] = "";
-                                folderEntries.forEach(function(folder, ind) {
+                                folderEntries.forEach(function (folder, ind) {
                                     let folderPath = `${encodeURIComponent(
                                         folder.title
                                     )}\\`;
@@ -708,22 +711,21 @@ var writeTempSimulationModules = function(
                                                 : parentFolder.parent.toString();
                                         parentFolder = idMap[parentId];
                                     }
-                                    return (folderPaths[
-                                        folder._id.toString()
-                                    ] = folderPath);
+                                    return (folderPaths[folder._id.toString()] =
+                                        folderPath);
                                 });
 
                                 return repo.getEntries(
                                     {
                                         handler: EntryType.IP,
-                                        included: true
+                                        included: true,
                                     },
-                                    function(err, ipEntries) {
+                                    function (err, ipEntries) {
                                         if (err) {
                                             return cb(err);
                                         } else {
                                             return repo.getSynthesizable(
-                                                function(err, verilogEntries) {
+                                                function (err, verilogEntries) {
                                                     if (err) {
                                                         return cb(err);
                                                     } else {
@@ -737,7 +739,7 @@ var writeTempSimulationModules = function(
                                                         }
                                                         return async.each(
                                                             verilogEntries,
-                                                            function(
+                                                            function (
                                                                 entry,
                                                                 callback
                                                             ) {
@@ -753,9 +755,10 @@ var writeTempSimulationModules = function(
                                                                 fileNames[
                                                                     entry._id
                                                                 ] = {
-                                                                    tempName: fileName,
+                                                                    tempName:
+                                                                        fileName,
                                                                     sourceName:
-                                                                        entry.title
+                                                                        entry.title,
                                                                 };
 
                                                                 reverseMap[
@@ -764,12 +767,12 @@ var writeTempSimulationModules = function(
                                                                     sourceName:
                                                                         entry.title,
                                                                     sourceId:
-                                                                        entry._id
+                                                                        entry._id,
                                                                 };
 
                                                                 return getFileContent(
                                                                     entry,
-                                                                    function(
+                                                                    function (
                                                                         readErr,
                                                                         content
                                                                     ) {
@@ -780,29 +783,33 @@ var writeTempSimulationModules = function(
                                                                                 readErr
                                                                             );
                                                                         } else {
-                                                                            const commentsRegEx = () =>
-                                                                                new RegExp(
-                                                                                    "\\/\\/.*$",
-                                                                                    "gm"
+                                                                            const commentsRegEx =
+                                                                                () =>
+                                                                                    new RegExp(
+                                                                                        "\\/\\/.*$",
+                                                                                        "gm"
+                                                                                    );
+                                                                            const multiCommentsRegEx =
+                                                                                () =>
+                                                                                    new RegExp(
+                                                                                        "\\/\\*(.|[\\r\\n])*?\\*\\/",
+                                                                                        "gm"
+                                                                                    );
+                                                                            content =
+                                                                                content
+                                                                                    .replace(
+                                                                                        commentsRegEx(),
+                                                                                        ""
+                                                                                    )
+                                                                                    .replace(
+                                                                                        multiCommentsRegEx(),
+                                                                                        ""
+                                                                                    );
+                                                                            content =
+                                                                                content.replace(
+                                                                                    /\$\s*stop*/,
+                                                                                    "$finish()"
                                                                                 );
-                                                                            const multiCommentsRegEx = () =>
-                                                                                new RegExp(
-                                                                                    "\\/\\*(.|[\\r\\n])*?\\*\\/",
-                                                                                    "gm"
-                                                                                );
-                                                                            content = content
-                                                                                .replace(
-                                                                                    commentsRegEx(),
-                                                                                    ""
-                                                                                )
-                                                                                .replace(
-                                                                                    multiCommentsRegEx(),
-                                                                                    ""
-                                                                                );
-                                                                            content = content.replace(
-                                                                                /\$\s*stop*/,
-                                                                                "$finish()"
-                                                                            );
                                                                             if (
                                                                                 depth ===
                                                                                     0 &&
@@ -810,19 +817,21 @@ var writeTempSimulationModules = function(
                                                                                     testbenchEntry
                                                                             ) {
                                                                                 //TODO: Remove comments!
-                                                                                let moduleRegEx = /([\s\S]*?)(module)([\s\S]+?)(endmodule)([\s\S]*)/gm;
-                                                                                moduleRegEx = /([\s\S]*?)(module)([\s\S]+?)(\([\s\S]*\))?;([\s\S]+?)(endmodule)([\s\S]*)/gm;
-                                                                                const matches = moduleRegEx.exec(
-                                                                                    content
-                                                                                );
+                                                                                let moduleRegEx =
+                                                                                    /([\s\S]*?)(module)([\s\S]+?)(endmodule)([\s\S]*)/gm;
+                                                                                moduleRegEx =
+                                                                                    /([\s\S]*?)(module)([\s\S]+?)(\([\s\S]*\))?;([\s\S]+?)(endmodule)([\s\S]*)/gm;
+                                                                                const matches =
+                                                                                    moduleRegEx.exec(
+                                                                                        content
+                                                                                    );
                                                                                 if (
                                                                                     matches ==
                                                                                     null
                                                                                 ) {
                                                                                     return callback(
                                                                                         {
-                                                                                            error:
-                                                                                                "The testbench does not contain any module."
+                                                                                            error: "The testbench does not contain any module.",
                                                                                         }
                                                                                     );
                                                                                 }
@@ -836,8 +845,7 @@ var writeTempSimulationModules = function(
                                                                                 ) {
                                                                                     return cb(
                                                                                         {
-                                                                                            error:
-                                                                                                "$stop keyword is prohibited."
+                                                                                            error: "$stop keyword is prohibited.",
                                                                                         }
                                                                                     );
                                                                                 }
@@ -865,7 +873,7 @@ var writeTempSimulationModules = function(
                                                                             return fs.writeFile(
                                                                                 `${fullPath}${fileName}`,
                                                                                 content,
-                                                                                function(
+                                                                                function (
                                                                                     writeErr
                                                                                 ) {
                                                                                     if (
@@ -876,8 +884,7 @@ var writeTempSimulationModules = function(
                                                                                         );
                                                                                         return callback(
                                                                                             {
-                                                                                                error:
-                                                                                                    "Failed to package the files for compiling."
+                                                                                                error: "Failed to package the files for compiling.",
                                                                                             }
                                                                                         );
                                                                                     } else {
@@ -889,7 +896,9 @@ var writeTempSimulationModules = function(
                                                                     }
                                                                 );
                                                             },
-                                                            function(asyncErr) {
+                                                            function (
+                                                                asyncErr
+                                                            ) {
                                                                 if (asyncErr) {
                                                                     return cb(
                                                                         asyncErr
@@ -897,31 +906,29 @@ var writeTempSimulationModules = function(
                                                                 } else {
                                                                     return async.each(
                                                                         ipEntries,
-                                                                        function(
+                                                                        function (
                                                                             ipEntry,
                                                                             callback
                                                                         ) {
-                                                                            const ipData = JSON.parse(
-                                                                                ipEntry.data
-                                                                            );
+                                                                            const ipData =
+                                                                                JSON.parse(
+                                                                                    ipEntry.data
+                                                                                );
                                                                             if (
                                                                                 ipData.ip ==
                                                                                 null
                                                                             ) {
                                                                                 return callback(
                                                                                     {
-                                                                                        error: `Cannot find the source of the IP Core ${
-                                                                                            ipEntry.title
-                                                                                        }.`
+                                                                                        error: `Cannot find the source of the IP Core ${ipEntry.title}.`,
                                                                                     }
                                                                                 );
                                                                             }
                                                                             return Repo.getRepoIP(
                                                                                 {
-                                                                                    _id:
-                                                                                        ipData.ip
+                                                                                    _id: ipData.ip,
                                                                                 },
-                                                                                function(
+                                                                                function (
                                                                                     err,
                                                                                     ip
                                                                                 ) {
@@ -936,18 +943,15 @@ var writeTempSimulationModules = function(
                                                                                     ) {
                                                                                         return callback(
                                                                                             {
-                                                                                                error: `Cannot find the source of the IP Core ${
-                                                                                                    ipEntry.title
-                                                                                                }.`
+                                                                                                error: `Cannot find the source of the IP Core ${ipEntry.title}.`,
                                                                                             }
                                                                                         );
                                                                                     } else {
                                                                                         return Repo.getRepo(
                                                                                             {
-                                                                                                _id:
-                                                                                                    ip.repo
+                                                                                                _id: ip.repo,
                                                                                             },
-                                                                                            function(
+                                                                                            function (
                                                                                                 err,
                                                                                                 ipRepo
                                                                                             ) {
@@ -962,9 +966,7 @@ var writeTempSimulationModules = function(
                                                                                                 ) {
                                                                                                     return callback(
                                                                                                         {
-                                                                                                            error: `Cannot instantiate IP Core ${
-                                                                                                                ipEntry.title
-                                                                                                            }.`
+                                                                                                            error: `Cannot instantiate IP Core ${ipEntry.title}.`,
                                                                                                         }
                                                                                                     );
                                                                                                 } else {
@@ -979,20 +981,23 @@ var writeTempSimulationModules = function(
 
                                                                                                     fileNames[
                                                                                                         ipEntry._id
-                                                                                                    ] = {
-                                                                                                        tempName: fileName,
-                                                                                                        sourceName:
-                                                                                                            ipEntry.title
-                                                                                                    };
+                                                                                                    ] =
+                                                                                                        {
+                                                                                                            tempName:
+                                                                                                                fileName,
+                                                                                                            sourceName:
+                                                                                                                ipEntry.title,
+                                                                                                        };
 
                                                                                                     reverseMap[
                                                                                                         fileName
-                                                                                                    ] = {
-                                                                                                        sourceName:
-                                                                                                            ipEntry.title,
-                                                                                                        sourceId:
-                                                                                                            ipEntry._id
-                                                                                                    };
+                                                                                                    ] =
+                                                                                                        {
+                                                                                                            sourceName:
+                                                                                                                ipEntry.title,
+                                                                                                            sourceId:
+                                                                                                                ipEntry._id,
+                                                                                                        };
                                                                                                     return writeTempSimulationModules(
                                                                                                         ipRepo,
                                                                                                         false,
@@ -1000,7 +1005,7 @@ var writeTempSimulationModules = function(
                                                                                                         `${fullPath}/${fileName}\\`,
                                                                                                         depth +
                                                                                                             1,
-                                                                                                        function(
+                                                                                                        function (
                                                                                                             err
                                                                                                         ) {
                                                                                                             if (
@@ -1021,7 +1026,7 @@ var writeTempSimulationModules = function(
                                                                                 }
                                                                             );
                                                                         },
-                                                                        function(
+                                                                        function (
                                                                             err
                                                                         ) {
                                                                             if (
@@ -1056,11 +1061,11 @@ var writeTempSimulationModules = function(
                 }
             });
         if (testbenchEntry) {
-            return fs.mkdir(fullPath, 0o0777, function(err) {
+            return fs.mkdir(fullPath, 0o0777, function (err) {
                 if (err) {
                     console.error(err);
                     return cb({
-                        error: "Failed to package the files for compiling."
+                        error: "Failed to package the files for compiling.",
                     });
                 } else {
                     return mkdirCB();
@@ -1074,18 +1079,18 @@ var writeTempSimulationModules = function(
     if (depth === 0 && testbenchId != null && testbenchId) {
         return repo.getEntry(
             {
-                _id: testbenchId
+                _id: testbenchId,
             },
-            function(err, testbenchEntry) {
+            function (err, testbenchEntry) {
                 if (err) {
                     return cb(err);
                 } else if (!testbenchEntry) {
                     return cb({
-                        error: "The target file does not exist."
+                        error: "The target file does not exist.",
                     });
                 } else if (testbenchEntry.handler !== EntryType.TestbenchFile) {
                     return cb({
-                        error: "The target file is not a testbench file."
+                        error: "The target file is not a testbench file.",
                     });
                 } else {
                     return testbenchCB(testbenchEntry);
@@ -1126,19 +1131,26 @@ const writeNetlistSimulationModules = async (
         }
 
         let rootEntry = await repo.p.getRoot();
-        let folderEntries = await repo.p.getEntries({ handler: EntryType.Folder });
+        let folderEntries = await repo.p.getEntries({
+            handler: EntryType.Folder,
+        });
 
         const idMap = {};
         idMap[rootEntry._id.toString()] = rootEntry;
-        folderEntries.forEach(folder =>
-            (idMap[folder._id.toString()] = folder)
+        folderEntries.forEach(
+            (folder) => (idMap[folder._id.toString()] = folder)
         );
         const folderPaths = {};
         folderPaths[rootEntry._id] = "";
         for (let folder of folderEntries) {
-            let folderPath = `${encodeURIComponent(folder.title).replace(/[\(\)]/gm, "\\")}\\`;
-            let parentId = folder.parent.toString() === rootEntry._id.toString() ?
-                null : folder.parent.toString();
+            let folderPath = `${encodeURIComponent(folder.title).replace(
+                /[\(\)]/gm,
+                "\\"
+            )}\\`;
+            let parentId =
+                folder.parent.toString() === rootEntry._id.toString()
+                    ? null
+                    : folder.parent.toString();
             let parentFolder = idMap[parentId];
 
             while (parentFolder) {
@@ -1148,8 +1160,7 @@ const writeNetlistSimulationModules = async (
                 )}\\${folderPath}`;
 
                 parentId =
-                    parentFolder.parent.toString() ===
-                    rootEntry._id.toString()
+                    parentFolder.parent.toString() === rootEntry._id.toString()
                         ? null
                         : parentFolder.parent.toString();
                 parentFolder = idMap[parentId];
@@ -1162,186 +1173,141 @@ const writeNetlistSimulationModules = async (
         const fileNames = {};
         const reverseMap = {};
         let dumpName = "";
-        const verilogEntries = [
-            netlistEntry,
-            testbenchEntry
-        ];
+        const verilogEntries = [netlistEntry, testbenchEntry];
         verilogEntries.push(testbenchEntry);
 
         for (let entry of verilogEntries) {
-            let fileName = `${folderPaths[entry.parent]}${encodeURIComponent(entry.title)}`;
-            fileNames[entry._id] = { tempName: fileName, sourceName: entry.title };
-            reverseMap[fileName] = { sourceName: entry.title, sourceId: entry._id };
-            
-            let content = await new Promise((resolve, reject)=> getFileContent(entry, (err, content)=> {
-                if (err) {
-                    return reject(err);
-                }
-                return resolve(content);
-            }));
+            let fileName = `${folderPaths[entry.parent]}${encodeURIComponent(
+                entry.title
+            )}`;
+            fileNames[entry._id] = {
+                tempName: fileName,
+                sourceName: entry.title,
+            };
+            reverseMap[fileName] = {
+                sourceName: entry.title,
+                sourceId: entry._id,
+            };
+
+            let content = await new Promise((resolve, reject) =>
+                getFileContent(entry, (err, content) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(content);
+                })
+            );
 
             if (entry === testbenchEntry) {
                 const commentsRegEx = () => new RegExp("\\/\\/.*$", "gm");
-                const multiCommentsRegEx = () => new RegExp(
-                    "\\/\\*(.|[\\r\\n])*?\\*\\/",
-                    "gm"
-                );
-                content = content.replace(commentsRegEx(), "").replace(
-                    multiCommentsRegEx(),
-                    ""
-                );
-                content = content.replace(
-                    /\$\s*stop*/,
-                    "$finish()"
-                );
+                const multiCommentsRegEx = () =>
+                    new RegExp("\\/\\*(.|[\\r\\n])*?\\*\\/", "gm");
+                content = content
+                    .replace(commentsRegEx(), "")
+                    .replace(multiCommentsRegEx(), "");
+                content = content.replace(/\$\s*stop*/, "$finish()");
 
-                let moduleRegEx = /([\s\S]*?)(module)([\s\S]+?)(\([\s\S]*\))?;([\s\S]+?)(endmodule)([\s\S]*)/gm;
+                let moduleRegEx =
+                    /([\s\S]*?)(module)([\s\S]+?)(\([\s\S]*\))?;([\s\S]+?)(endmodule)([\s\S]*)/gm;
 
-                const matches = moduleRegEx.exec(
-                    content
-                );
+                const matches = moduleRegEx.exec(content);
                 if (!matches) {
-                    throw { error: "The testbench does not contain any module." };
+                    throw {
+                        error: "The testbench does not contain any module.",
+                    };
                 }
-                
+
                 dumpName = `${testbenchEntry.title}_${Date.now()}.vcd`;
                 if (/\$\s*stop/.test(content)) {
                     return cb({
-                            error: "The $stop keyword is prohibited."
+                        error: "The $stop keyword is prohibited.",
                     });
                 }
                 let finishAppend = `\n#${simulationTime};\n$finish;\n`;
 
-
-                content = `${matches[1]
-                }${
-                    matches[2]
-                } ${
-                    matches[3]
-                } ${
-                    matches[4]
-                        ? matches[4]
-                        : ""
+                content = `${matches[1]}${matches[2]} ${matches[3]} ${
+                    matches[4] ? matches[4] : ""
                 };${
                     matches[5]
                 }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(1, ${
                     matches[3]
-                }); ${finishAppend}end\n${
-                    matches[6]
-                }${
-                    matches[7]
-                }`;
+                }); ${finishAppend}end\n${matches[6]}${matches[7]}`;
             }
 
-            await fs.writeFile(
-                `${fullPath}/${fileName}`,
-                content
-            ).catch(err => {
-                console.error(err);
-                throw { error: "Failed to package files for simulation." };
-            })
+            await fs
+                .writeFile(`${fullPath}/${fileName}`, content)
+                .catch((err) => {
+                    console.error(err);
+                    throw { error: "Failed to package files for simulation." };
+                });
         }
-
 
         const stdcellRepo = config.stdcellRepo;
         const stdcellPath = path.join(stdcellRepo, stdcell, "models.v");
         const stdCellDest = `${fullPath}/${stdcell}.v`;
 
         try {
-            const stat = fs.lstatSync(
-                stdcellPath
-            );
+            const stat = fs.lstatSync(stdcellPath);
         } catch (e) {
-            console.error(
-                e
-            );
+            console.error(e);
             return cb({
-                error: `Cannot find the standard cell models for this library ${stdcell}`
+                error: `Cannot find the standard cell models for this library ${stdcell}`,
             });
         }
 
-        const done = function(
-            err
-        ) {
+        const done = function (err) {
             if (err) {
-                console.error(
-                    err
-                );
-                return cb(
-                    {
-                        error:
-                            "Failed to package the files for compiling."
-                    }
-                );
+                console.error(err);
+                return cb({
+                    error: "Failed to package the files for compiling.",
+                });
             } else {
-                return cb(
-                    null,
-                    fullPath,
-                    fileNames,
-                    reverseMap,
-                    dumpName
-                );
+                return cb(null, fullPath, fileNames, reverseMap, dumpName);
             }
         };
-        const readStream = fs.createReadStream(
-            stdcellPath
-        );
-        readStream.on(
-            "error",
-            done
-        );
-        const writeStream = fs.createWriteStream(
-            stdCellDest
-        );
-        writeStream.on(
-            "error",
-            done
-        );
-        writeStream.on(
-            "close",
-            done
-        );
-        return readStream.pipe(
-            writeStream
-        );
-
+        const readStream = fs.createReadStream(stdcellPath);
+        readStream.on("error", done);
+        const writeStream = fs.createWriteStream(stdCellDest);
+        writeStream.on("error", done);
+        writeStream.on("close", done);
+        return readStream.pipe(writeStream);
     } catch (err) {
         return cb(err);
     }
-}
+};
 
-const writeTempRepoModules = function(repo, cb) {
+const writeTempRepoModules = function (repo, cb) {
     const dirName = shortid.generate() + "_" + Date.now();
     const fullPath = path.join(process.cwd(), `temp/${dirName}`);
-    return fs.mkdir(fullPath, 0o0777, function(err) {
+    return fs.mkdir(fullPath, 0o0777, function (err) {
         if (err) {
             console.error(err);
             return cb({
-                error: "Failed to package the files for compiling."
+                error: "Failed to package the files for compiling.",
             });
         } else {
-            return repo.getRoot(function(err, rootEntry) {
+            return repo.getRoot(function (err, rootEntry) {
                 if (err) {
                     return cb(err);
                 } else {
                 }
                 return repo.getEntries(
                     {
-                        handler: EntryType.Folder
+                        handler: EntryType.Folder,
                     },
-                    function(err, folderEntries) {
+                    function (err, folderEntries) {
                         if (err) {
                             return cb(err);
                         } else {
                             const idMap = {};
                             idMap[rootEntry._id.toString()] = rootEntry;
                             folderEntries.forEach(
-                                folder =>
+                                (folder) =>
                                     (idMap[folder._id.toString()] = folder)
                             );
                             const folderPaths = {};
                             folderPaths[rootEntry._id] = "";
-                            folderEntries.forEach(function(folder, ind) {
+                            folderEntries.forEach(function (folder, ind) {
                                 let folderPath = `${encodeURIComponent(
                                     folder.title
                                 )}\\`;
@@ -1363,11 +1329,10 @@ const writeTempRepoModules = function(repo, cb) {
                                             : parentFolder.parent.toString();
                                     parentFolder = idMap[parentId];
                                 }
-                                return (folderPaths[
-                                    folder._id.toString()
-                                ] = folderPath);
+                                return (folderPaths[folder._id.toString()] =
+                                    folderPath);
                             });
-                            return repo.isIPCoresIncluded(function(
+                            return repo.isIPCoresIncluded(function (
                                 err,
                                 result
                             ) {
@@ -1375,11 +1340,11 @@ const writeTempRepoModules = function(repo, cb) {
                                     return cb(err);
                                 } else if (result.isIncluded) {
                                     return cb({
-                                        error: `Cannot synthesize project with IP cores, exclude/remove the modules (${names}) before synthesis.`
+                                        error: `Cannot synthesize project with IP cores, exclude/remove the modules (${names}) before synthesis.`,
                                     });
                                 } else {
                                     const { isIncluded, names } = result;
-                                    return repo.getSynthesizable(function(
+                                    return repo.getSynthesizable(function (
                                         err,
                                         verilogEntries
                                     ) {
@@ -1390,7 +1355,7 @@ const writeTempRepoModules = function(repo, cb) {
                                             const reverseMap = {};
                                             return async.each(
                                                 verilogEntries,
-                                                function(entry, callback) {
+                                                function (entry, callback) {
                                                     //fileName = shortid.generate() + '_' + Date.now() + '.v'
                                                     const fileName = `${
                                                         folderPaths[
@@ -1402,17 +1367,17 @@ const writeTempRepoModules = function(repo, cb) {
 
                                                     fileNames[entry._id] = {
                                                         tempName: fileName,
-                                                        sourceName: entry.title
+                                                        sourceName: entry.title,
                                                     };
 
                                                     reverseMap[fileName] = {
                                                         sourceName: entry.title,
-                                                        sourceId: entry._id
+                                                        sourceId: entry._id,
                                                     };
 
                                                     return getFileContent(
                                                         entry,
-                                                        function(
+                                                        function (
                                                             readErr,
                                                             content
                                                         ) {
@@ -1424,7 +1389,7 @@ const writeTempRepoModules = function(repo, cb) {
                                                                 return fs.writeFile(
                                                                     `${fullPath}/${fileName}`,
                                                                     content,
-                                                                    function(
+                                                                    function (
                                                                         writeErr
                                                                     ) {
                                                                         if (
@@ -1435,8 +1400,7 @@ const writeTempRepoModules = function(repo, cb) {
                                                                             );
                                                                             return callback(
                                                                                 {
-                                                                                    error:
-                                                                                        "Failed to package the files for compiling."
+                                                                                    error: "Failed to package the files for compiling.",
                                                                                 }
                                                                             );
                                                                         } else {
@@ -1448,7 +1412,7 @@ const writeTempRepoModules = function(repo, cb) {
                                                         }
                                                     );
                                                 },
-                                                function(asyncErr) {
+                                                function (asyncErr) {
                                                     if (asyncErr) {
                                                         return cb(asyncErr);
                                                     } else {
@@ -1473,14 +1437,14 @@ const writeTempRepoModules = function(repo, cb) {
     });
 };
 
-const writeTempRepoModule = function(entryId, cb) {
+const writeTempRepoModule = function (entryId, cb) {
     const dirName = shortid.generate() + "_" + Date.now();
     const fullPath = path.join(process.cwd(), `temp/${dirName}`);
-    return fs.mkdir(fullPath, 0o0777, function(err) {
+    return fs.mkdir(fullPath, 0o0777, function (err) {
         if (err) {
             console.error(err);
             return cb({
-                error: "Failed to get the source file for compiling."
+                error: "Failed to get the source file for compiling.",
             });
         } else {
             //TODO: Use the Repo model.
@@ -1489,17 +1453,17 @@ const writeTempRepoModule = function(entryId, cb) {
                 {
                     _id: entryId,
                     handler: EntryType.VerilogFile,
-                    synthesize: true
+                    synthesize: true,
                 },
-                function(err, entry) {
+                function (err, entry) {
                     if (err) {
                         return cb(err);
                     } else if (entry) {
                         return cb({
-                            error: "Entry not found."
+                            error: "Entry not found.",
                         });
                     } else {
-                        return getFileContent(entry, function(err, content) {
+                        return getFileContent(entry, function (err, content) {
                             if (err) {
                                 return cb(err);
                             } else {
@@ -1515,18 +1479,17 @@ const writeTempRepoModule = function(entryId, cb) {
                                 return fs.writeFile(
                                     `${fullPath}/${fileName}`,
                                     content,
-                                    function(err) {
+                                    function (err) {
                                         if (err) {
                                             console.error(err);
                                             return cb({
-                                                error:
-                                                    "Failed to read the files for compiling."
+                                                error: "Failed to read the files for compiling.",
                                             });
                                         } else {
                                             const reverseMap = {};
                                             reverseMap[fileName] = {
                                                 sourceName: entry.title,
-                                                sourceId: entry._id
+                                                sourceId: entry._id,
                                             };
                                             return cb(
                                                 null,
@@ -1545,14 +1508,14 @@ const writeTempRepoModule = function(entryId, cb) {
         }
     });
 };
-const writeTempNetlist = function(entryId, cb) {
+const writeTempNetlist = function (entryId, cb) {
     const dirName = shortid.generate() + "_" + Date.now();
     const repoPath = path.join(process.cwd(), `temp/${dirName}`);
-    return fs.mkdir(repoPath, 0o0777, function(err) {
+    return fs.mkdir(repoPath, 0o0777, function (err) {
         if (err) {
             console.error(err);
             return cb({
-                error: "Failed to get the source file for compiling."
+                error: "Failed to get the source file for compiling.",
             });
         } else {
             //TODO: Use the Repo model.
@@ -1560,17 +1523,17 @@ const writeTempNetlist = function(entryId, cb) {
             return Repo.getRepoEntry(
                 {
                     _id: entryId,
-                    handler: EntryType.NetlistFile
+                    handler: EntryType.NetlistFile,
                 },
-                function(err, entry) {
+                function (err, entry) {
                     if (err) {
                         return cb(err);
                     } else if (!entry) {
                         return cb({
-                            error: "Netlist not found."
+                            error: "Netlist not found.",
                         });
                     } else {
-                        return getFileContent(entry, function(err, content) {
+                        return getFileContent(entry, function (err, content) {
                             if (err) {
                                 return cb(err);
                             } else {
@@ -1585,44 +1548,45 @@ const writeTempNetlist = function(entryId, cb) {
                                     repoPath,
                                     folderName
                                 );
-                                return fs.mkdir(filePath, 0o0777, function(
-                                    err
-                                ) {
-                                    if (err) {
-                                        console.error(err);
-                                        return cb({
-                                            error:
-                                                "Failed to get the source file for compiling."
-                                        });
-                                    } else {
-                                        return fs.writeFile(
-                                            `${filePath}/${fileName}`,
-                                            content,
-                                            function(err) {
-                                                if (err) {
-                                                    console.error(err);
-                                                    return cb({
-                                                        error:
-                                                            "Failed to read the files for compiling."
-                                                    });
-                                                } else {
-                                                    const reverseMap = {};
-                                                    reverseMap[fileName] = {
-                                                        sourceName: entry.title,
-                                                        sourceId: entry._id
-                                                    };
-                                                    return cb(
-                                                        null,
-                                                        repoPath,
-                                                        filePath,
-                                                        fileName,
-                                                        reverseMap
-                                                    );
+                                return fs.mkdir(
+                                    filePath,
+                                    0o0777,
+                                    function (err) {
+                                        if (err) {
+                                            console.error(err);
+                                            return cb({
+                                                error: "Failed to get the source file for compiling.",
+                                            });
+                                        } else {
+                                            return fs.writeFile(
+                                                `${filePath}/${fileName}`,
+                                                content,
+                                                function (err) {
+                                                    if (err) {
+                                                        console.error(err);
+                                                        return cb({
+                                                            error: "Failed to read the files for compiling.",
+                                                        });
+                                                    } else {
+                                                        const reverseMap = {};
+                                                        reverseMap[fileName] = {
+                                                            sourceName:
+                                                                entry.title,
+                                                            sourceId: entry._id,
+                                                        };
+                                                        return cb(
+                                                            null,
+                                                            repoPath,
+                                                            filePath,
+                                                            fileName,
+                                                            reverseMap
+                                                        );
+                                                    }
                                                 }
-                                            }
-                                        );
+                                            );
+                                        }
                                     }
-                                });
+                                );
                             }
                         });
                     }
@@ -1643,28 +1607,28 @@ const writeTempRepo = async (repo, cb) => {
             } catch (err) {
                 console.error(err);
                 return reject({
-                    error: "Failed to package repository files."
+                    error: "Failed to package repository files.",
                 });
             }
             const rootEntry = await repo.getRoot();
             const repoEntries = await repo.getEntries({
                 _id: {
-                    $ne: rootEntry._id
+                    $ne: rootEntry._id,
                 },
                 handler: {
-                    $ne: EntryType.Folder
-                }
+                    $ne: EntryType.Folder,
+                },
             });
             const rootTitle = rootEntry.title;
             const repoFolders = await repo.getEntries({
-                handler: EntryType.Folder
+                handler: EntryType.Folder,
             });
             let folderPath;
             const childrenMap = {};
             const parentsMap = {};
             const idMap = {};
             idMap[rootEntry._id] = rootEntry;
-            repoFolders.forEach(function(folder) {
+            repoFolders.forEach(function (folder) {
                 idMap[folder._id] = folder;
                 if (folder.parent != null) {
                     if (childrenMap[folder.parent] == null) {
@@ -1677,7 +1641,7 @@ const writeTempRepo = async (repo, cb) => {
             repoFolders.push(rootEntry);
 
             const fullPaths = {};
-            repoFolders.forEach(function(folder) {
+            repoFolders.forEach(function (folder) {
                 folderPath = `${folder.title}`;
                 let folderParentId = folder.parent;
                 let folderParent = "";
@@ -1695,48 +1659,50 @@ const writeTempRepo = async (repo, cb) => {
                 return (fullPaths[folder._id] = absFolderPath);
             });
             const pathsArray = _.values(fullPaths);
-            const pathsArrayPromises = _.map(pathsArray, folderPath => () =>
-                new Promise(async (resolve, reject) => {
-                    try {
-                        await fs.mkdirp(folderPath, {
-                            mode: 0o0777
-                        });
-                    } catch (err) {
-                        console.error(err);
-                        return reject({
-                            error:
-                                "An error occurred while creating the repository structure."
-                        });
-                    }
-                    return resolve(folderPath);
-                })
+            const pathsArrayPromises = _.map(
+                pathsArray,
+                (folderPath) => () =>
+                    new Promise(async (resolve, reject) => {
+                        try {
+                            await fs.mkdirp(folderPath, {
+                                mode: 0o0777,
+                            });
+                        } catch (err) {
+                            console.error(err);
+                            return reject({
+                                error: "An error occurred while creating the repository structure.",
+                            });
+                        }
+                        return resolve(folderPath);
+                    })
             );
             for (let i = 0; i < pathsArrayPromises.length; i++) {
                 await pathsArrayPromises[i]();
             }
 
-            const repoEntriesPromises = _.map(repoEntries, entry => () =>
-                new Promise(async (resolve, reject) => {
-                    const entryPath = path.join(
-                        fullPaths[entry.parent],
-                        entry.title
-                    );
-                    try {
-                        const content = await entry.getContent();
+            const repoEntriesPromises = _.map(
+                repoEntries,
+                (entry) => () =>
+                    new Promise(async (resolve, reject) => {
+                        const entryPath = path.join(
+                            fullPaths[entry.parent],
+                            entry.title
+                        );
                         try {
-                            await fs.writeFile(entryPath, content);
+                            const content = await entry.getContent();
+                            try {
+                                await fs.writeFile(entryPath, content);
+                            } catch (err) {
+                                console.error();
+                                return reject({
+                                    error: "An error occurred while creating the repository structure.",
+                                });
+                            }
+                            return resolve(entryPath);
                         } catch (err) {
-                            console.error();
-                            return reject({
-                                error:
-                                    "An error occurred while creating the repository structure."
-                            });
+                            return reject(err);
                         }
-                        return resolve(entryPath);
-                    } catch (err) {
-                        return reject(err);
-                    }
-                })
+                    })
             );
             for (let i = 0; i < repoEntriesPromises.length; i++) {
                 await repoEntriesPromises[i]();
@@ -1744,7 +1710,7 @@ const writeTempRepo = async (repo, cb) => {
             const sourcePath = path.join(fullPath, rootTitle);
             return resolve({
                 repoPath: sourcePath,
-                tempPath: fullPath
+                tempPath: fullPath,
             });
         } catch (err) {
             return reject(err);
@@ -1754,7 +1720,7 @@ const writeTempRepo = async (repo, cb) => {
         .catch(cb);
 };
 
-const writeTestbenchFile = function(
+const writeTestbenchFile = function (
     repo,
     testbenchEntry,
     parentPaths,
@@ -1764,14 +1730,14 @@ const writeTestbenchFile = function(
 ) {
     if (!testbenchEntry) {
         return cb({
-            error: "The target file does not exist."
+            error: "The target file does not exist.",
         });
     }
     const commentsRegEx = () => new RegExp("\\/\\/.*$", "gm");
     const multiCommentsRegEx = () =>
         new RegExp("\\/\\*(.|[\\r\\n])*?\\*\\/", "gm");
     let dumpName = `${testbenchEntry.title}_${Date.now()}.vcd`;
-    return testbenchEntry.getContent(function(err, content) {
+    return testbenchEntry.getContent(function (err, content) {
         if (err) {
             return cb(err);
         } else {
@@ -1779,18 +1745,20 @@ const writeTestbenchFile = function(
                 .replace(commentsRegEx(), "")
                 .replace(multiCommentsRegEx(), "");
             content = content.replace(/\$\s*stop*/, "$finish()");
-            let moduleRegEx = /([\s\S]*?)(module)([\s\S]+?)(endmodule)([\s\S]*)/gm;
-            moduleRegEx = /([\s\S]*?)(module)([\s\S]+?)(\([\s\S]*\))?;([\s\S]+?)(endmodule)([\s\S]*)/gm;
+            let moduleRegEx =
+                /([\s\S]*?)(module)([\s\S]+?)(endmodule)([\s\S]*)/gm;
+            moduleRegEx =
+                /([\s\S]*?)(module)([\s\S]+?)(\([\s\S]*\))?;([\s\S]+?)(endmodule)([\s\S]*)/gm;
             const matches = moduleRegEx.exec(content);
             if (matches == null) {
                 return cb({
-                    error: "The testbench does not contain any module."
+                    error: "The testbench does not contain any module.",
                 });
             }
             dumpName = `${testbenchEntry.title}_${Date.now()}.vcd`;
             if (/\$\s*stop/.test(content)) {
                 return cb({
-                    error: "$stop keyword is prohibited."
+                    error: "$stop keyword is prohibited.",
                 });
             }
             const finishAppend = `\n#${simulationTime};\n$finish;\n`;
@@ -1798,19 +1766,18 @@ const writeTestbenchFile = function(
                 matches[4] ? matches[4] : ""
             };${
                 matches[5]
-            }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(${level ||
-                0}, ${matches[3]}); ${finishAppend}end\n${matches[6]}${
-                matches[7]
-            }`;
+            }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(${
+                level || 0
+            }, ${matches[3]}); ${finishAppend}end\n${matches[6]}${matches[7]}`;
             const testbenchPath = path.join(
                 parentPaths[testbenchEntry.parent],
                 testbenchEntry.title
             );
-            return fs.writeFile(testbenchPath, content, function(writeErr) {
+            return fs.writeFile(testbenchPath, content, function (writeErr) {
                 if (writeErr) {
                     console.error(writeErr);
                     return cb({
-                        error: "Failed to package the files for compiling."
+                        error: "Failed to package the files for compiling.",
                     });
                 } else {
                     return cb(null, testbenchPath, dumpName);
@@ -1820,7 +1787,7 @@ const writeTestbenchFile = function(
     });
 };
 
-const writeIPCoreFiles = function(
+const writeIPCoreFiles = function (
     repo,
     repoPath,
     parentPaths,
@@ -1832,7 +1799,7 @@ const writeIPCoreFiles = function(
 ) {
     if (depth >= 3) {
         return cb({
-            error: "Cannot simulate IP depth > 3."
+            error: "Cannot simulate IP depth > 3.",
         });
     }
 
@@ -1840,56 +1807,50 @@ const writeIPCoreFiles = function(
     return repo.getEntries(
         {
             handler: EntryType.IP,
-            included: true
+            included: true,
         },
-        function(err, ips) {
+        function (err, ips) {
             if (err) {
                 return cb(err);
             } else {
                 return async.each(
                     ips,
-                    function(ipEntry, callback) {
+                    function (ipEntry, callback) {
                         const ipData = JSON.parse(ipEntry.data);
                         if (ipData.ip == null) {
                             return callback({
-                                error: `Cannot find the source of the IP Core ${
-                                    ipEntry.title
-                                }.`
+                                error: `Cannot find the source of the IP Core ${ipEntry.title}.`,
                             });
                         }
                         return Repo.getRepoIP(
                             {
-                                _id: ipData.ip
+                                _id: ipData.ip,
                             },
-                            function(err, ip) {
+                            function (err, ip) {
                                 if (err) {
                                     return callback(err);
                                 } else if (!ip) {
                                     return callback({
-                                        error: `Cannot find the source of the IP Core ${
-                                            ipEntry.title
-                                        }.`
+                                        error: `Cannot find the source of the IP Core ${ipEntry.title}.`,
                                     });
                                 } else {
                                     return Repo.getRepo(
                                         {
-                                            _id: ip.repo
+                                            _id: ip.repo,
                                         },
-                                        function(err, ipRepo) {
+                                        function (err, ipRepo) {
                                             if (err) {
                                                 return callback(err);
                                             } else if (!ipRepo) {
                                                 return callback({
-                                                    error: `Cannot instantiate IP Core ${
-                                                        ipEntry.title
-                                                    }.`
+                                                    error: `Cannot instantiate IP Core ${ipEntry.title}.`,
                                                 });
                                             } else {
                                                 return writeTestbenchSimulationStructure(
                                                     ipRepo,
                                                     depth + 1,
                                                     parentPaths[ipEntry._id],
-                                                    function(
+                                                    function (
                                                         err,
                                                         ipSourcePath,
                                                         ipFullPath,
@@ -1926,7 +1887,8 @@ const writeIPCoreFiles = function(
                                                                     namesMap.ips ==
                                                                     null
                                                                 ) {
-                                                                    namesMap.ips = {};
+                                                                    namesMap.ips =
+                                                                        {};
                                                                 }
                                                                 if (
                                                                     namesMap
@@ -1957,9 +1919,8 @@ const writeIPCoreFiles = function(
                                                                     depth
                                                                 ][
                                                                     ipEntry.title
-                                                                ][
-                                                                    fileName
-                                                                ] = fileId;
+                                                                ][fileName] =
+                                                                    fileId;
                                                             }
                                                             return callback();
                                                         }
@@ -1972,7 +1933,7 @@ const writeIPCoreFiles = function(
                             }
                         );
                     },
-                    function(err) {
+                    function (err) {
                         if (err) {
                             return cb(err);
                         } else {
@@ -1985,63 +1946,69 @@ const writeIPCoreFiles = function(
     );
 };
 
-var writeTestbenchSimulationStructure = function(repo, depth, rootDir, cb) {
+var writeTestbenchSimulationStructure = function (repo, depth, rootDir, cb) {
     if (depth >= 3) {
         return cb({
-            error: "Cannot simulate IP depth >= 3."
+            error: "Cannot simulate IP depth >= 3.",
         });
     }
-    return writeSynthesisContainerFiles(repo, false, true, rootDir, function(
-        err,
-        sourcePath,
-        fullPath,
-        filePaths,
-        parentPaths,
-        relativeParentPaths,
-        namesMap
-    ) {
-        if (err) {
-            return cb(err);
-        }
-        if (arguments.length === 2) {
-            let temp = sourcePath;
-            var {
-                sourcePath,
-                fullPath,
-                filePaths,
-                parentPaths,
-                relativeParentPaths,
-                namesMap
-            } = temp;
-            var parentPaths = temp.fullPaths;
-            var relativeParentPaths = temp.relativePaths;
-        }
-
-        return writeIPCoreFiles(
-            repo,
+    return writeSynthesisContainerFiles(
+        repo,
+        false,
+        true,
+        rootDir,
+        function (
+            err,
             sourcePath,
+            fullPath,
+            filePaths,
             parentPaths,
             relativeParentPaths,
-            filePaths,
-            namesMap,
-            depth,
-            function(err, filePaths, namesMap) {
-                if (err) {
-                    return cb(err);
-                } else {
-                    return cb(
-                        null,
-                        sourcePath,
-                        fullPath,
-                        filePaths,
-                        parentPaths,
-                        relativeParentPaths,
-                        namesMap
-                    );
-                }
+            namesMap
+        ) {
+            if (err) {
+                return cb(err);
             }
-        );
-    });
+            if (arguments.length === 2) {
+                let temp = sourcePath;
+                var {
+                    sourcePath,
+                    fullPath,
+                    filePaths,
+                    parentPaths,
+                    relativeParentPaths,
+                    namesMap,
+                } = temp;
+                var parentPaths = temp.fullPaths;
+                var relativeParentPaths = temp.relativePaths;
+            }
+
+            return writeIPCoreFiles(
+                repo,
+                sourcePath,
+                parentPaths,
+                relativeParentPaths,
+                filePaths,
+                namesMap,
+                depth,
+                function (err, filePaths, namesMap) {
+                    if (err) {
+                        return cb(err);
+                    } else {
+                        return cb(
+                            null,
+                            sourcePath,
+                            fullPath,
+                            filePaths,
+                            parentPaths,
+                            relativeParentPaths,
+                            namesMap
+                        );
+                    }
+                }
+            );
+        }
+    );
 };
 const writeTestbenchSimulationContainerFiles = (
     repo,
@@ -2055,51 +2022,56 @@ const writeTestbenchSimulationContainerFiles = (
         cb = rootDir;
         rootDir = "";
     }
-    return writeTestbenchSimulationStructure(repo, 0, rootDir, function(
-        err,
-        sourcePath,
-        fullPath,
-        filePaths,
-        parentPaths,
-        relativeParentPaths,
-        namesMap
-    ) {
-        if (err) {
-            return cb(err);
-        } else {
-            return writeTestbenchFile(
-                repo,
-                item,
-                parentPaths,
-                simulationTime,
-                level,
-                function(err, testbenchPath, dumpName) {
-                    if (err) {
-                        return cb(err);
+    return writeTestbenchSimulationStructure(
+        repo,
+        0,
+        rootDir,
+        function (
+            err,
+            sourcePath,
+            fullPath,
+            filePaths,
+            parentPaths,
+            relativeParentPaths,
+            namesMap
+        ) {
+            if (err) {
+                return cb(err);
+            } else {
+                return writeTestbenchFile(
+                    repo,
+                    item,
+                    parentPaths,
+                    simulationTime,
+                    level,
+                    function (err, testbenchPath, dumpName) {
+                        if (err) {
+                            return cb(err);
+                        }
+                        const testbenchRelativePath = path.join(
+                            relativeParentPaths[item.parent],
+                            item.title
+                        );
+                        namesMap.files[
+                            testbenchRelativePath.substr(
+                                testbenchRelativePath.indexOf("/") + 1
+                            )
+                        ] = item._id;
+                        return cb(
+                            null,
+                            testbenchPath,
+                            testbenchRelativePath,
+                            dumpName,
+                            sourcePath,
+                            fullPath,
+                            filePaths,
+                            namesMap
+                        );
                     }
-                    const testbenchRelativePath = path.join(
-                        relativeParentPaths[item.parent],
-                        item.title
-                    );
-                    namesMap.files[
-                        testbenchRelativePath.substr(
-                            testbenchRelativePath.indexOf("/") + 1
-                        )
-                    ] = item._id;
-                    return cb(
-                        null,
-                        testbenchPath,
-                        testbenchRelativePath,
-                        dumpName,
-                        sourcePath,
-                        fullPath,
-                        filePaths,
-                        namesMap
-                    );
-                }
-            );
+                );
+            }
         }
-    });
+    );
 };
 const writeNetlistSimulationContainerFiles = (
     repo,
@@ -2116,10 +2088,10 @@ const writeNetlistSimulationContainerFiles = (
         rootDir = "";
     }
 
-    writeRepoFolderStructure(repo, true, rootDir, function(err, result) {
+    writeRepoFolderStructure(repo, true, rootDir, function (err, result) {
         if (err) {
             if (fullPath) {
-                rmdir(fullPath, function(err) {
+                rmdir(fullPath, function (err) {
                     if (err) {
                         return console.error(err);
                     }
@@ -2127,17 +2099,13 @@ const writeNetlistSimulationContainerFiles = (
             }
             return cb(err);
         } else {
-            const {
-                sourcePath,
-                fullPath,
-                parentPaths,
-                relativeParentPaths
-            } = result;
+            const { sourcePath, fullPath, parentPaths, relativeParentPaths } =
+                result;
             const filePaths = {
-                verilog: []
+                verilog: [],
             };
             const namesMap = {
-                files: {}
+                files: {},
             };
             return writeTestbenchFile(
                 repo,
@@ -2145,7 +2113,7 @@ const writeNetlistSimulationContainerFiles = (
                 parentPaths,
                 simulationTime,
                 level,
-                function(err, testbenchPath, dumpName) {
+                function (err, testbenchPath, dumpName) {
                     if (err) {
                         return cb(err);
                     }
@@ -2158,7 +2126,7 @@ const writeNetlistSimulationContainerFiles = (
                             testbenchRelativePath.indexOf("/") + 1
                         )
                     ] = item._id;
-                    return netlist.getContent(function(err, content) {
+                    return netlist.getContent(function (err, content) {
                         if (err) {
                             return cb(err);
                         } else {
@@ -2166,78 +2134,77 @@ const writeNetlistSimulationContainerFiles = (
                                 parentPaths[netlist.parent],
                                 netlist.title
                             );
-                            return fs.writeFile(entryPath, content, function(
-                                err
-                            ) {
-                                if (err) {
-                                    console.error(err);
-                                    return callback({
-                                        error:
-                                            "Failed to package repository files."
-                                    });
-                                } else {
-                                    const relativePath = path.join(
-                                        relativeParentPaths[netlist.parent],
-                                        netlist.title
-                                    );
-                                    filePaths.verilog.push(relativePath);
-                                    namesMap.files[
-                                        relativePath.substr(
-                                            relativePath.indexOf("/") + 1
-                                        )
-                                    ] = netlist._id;
-                                    const stdcellPath = path.join(
-                                        config.stdcellRepo,
-                                        stdcell,
-                                        "models.v"
-                                    );
-                                    const stdCellDest = `${sourcePath}/${stdcell}.v`;
-                                    try {
-                                        const stat = fs.lstatSync(stdcellPath);
-                                    } catch (e) {
-                                        console.error(e);
-                                        return cb({
-                                            error: `Cannot find the standard cell models for this library ${stdcell}`
+                            return fs.writeFile(
+                                entryPath,
+                                content,
+                                function (err) {
+                                    if (err) {
+                                        console.error(err);
+                                        return callback({
+                                            error: "Failed to package repository files.",
                                         });
-                                    }
-                                    const done = function(err) {
-                                        if (err) {
-                                            console.error(err);
+                                    } else {
+                                        const relativePath = path.join(
+                                            relativeParentPaths[netlist.parent],
+                                            netlist.title
+                                        );
+                                        filePaths.verilog.push(relativePath);
+                                        namesMap.files[
+                                            relativePath.substr(
+                                                relativePath.indexOf("/") + 1
+                                            )
+                                        ] = netlist._id;
+                                        const stdcellPath = path.join(
+                                            config.stdcellRepo,
+                                            stdcell,
+                                            "models.v"
+                                        );
+                                        const stdCellDest = `${sourcePath}/${stdcell}.v`;
+                                        try {
+                                            const stat =
+                                                fs.lstatSync(stdcellPath);
+                                        } catch (e) {
+                                            console.error(e);
                                             return cb({
-                                                error:
-                                                    "Failed to package the files for compiling."
+                                                error: `Cannot find the standard cell models for this library ${stdcell}`,
                                             });
-                                        } else {
-                                            filePaths.verilog.push(
-                                                path.join(
-                                                    repo.repoTitle,
-                                                    `${stdcell}.v`
-                                                )
-                                            );
-                                            return cb(
-                                                null,
-                                                testbenchPath,
-                                                testbenchRelativePath,
-                                                dumpName,
-                                                sourcePath,
-                                                fullPath,
-                                                filePaths,
-                                                namesMap
-                                            );
                                         }
-                                    };
-                                    const readStream = fs.createReadStream(
-                                        stdcellPath
-                                    );
-                                    readStream.on("error", done);
-                                    const writeStream = fs.createWriteStream(
-                                        stdCellDest
-                                    );
-                                    writeStream.on("error", done);
-                                    writeStream.on("close", done);
-                                    return readStream.pipe(writeStream);
+                                        const done = function (err) {
+                                            if (err) {
+                                                console.error(err);
+                                                return cb({
+                                                    error: "Failed to package the files for compiling.",
+                                                });
+                                            } else {
+                                                filePaths.verilog.push(
+                                                    path.join(
+                                                        repo.repoTitle,
+                                                        `${stdcell}.v`
+                                                    )
+                                                );
+                                                return cb(
+                                                    null,
+                                                    testbenchPath,
+                                                    testbenchRelativePath,
+                                                    dumpName,
+                                                    sourcePath,
+                                                    fullPath,
+                                                    filePaths,
+                                                    namesMap
+                                                );
+                                            }
+                                        };
+                                        const readStream =
+                                            fs.createReadStream(stdcellPath);
+                                        readStream.on("error", done);
+                                        const writeStream =
+                                            fs.createWriteStream(stdCellDest);
+                                        writeStream.on("error", done);
+                                        writeStream.on("close", done);
+                                        return readStream.pipe(writeStream);
+                                    }
                                 }
-                            });
+                            );
                         }
                     });
                 }
@@ -2257,7 +2224,7 @@ const writeRepoFolderStructure = async (repo, allowIps, rootDir, cb) => {
                 } catch (err) {
                     console.error(err);
                     return reject({
-                        error: "Failed to package repository files."
+                        error: "Failed to package repository files.",
                     });
                 }
             } else {
@@ -2267,25 +2234,25 @@ const writeRepoFolderStructure = async (repo, allowIps, rootDir, cb) => {
             const rootEntry = await repo.getRoot();
             let { isIncluded, names } = await repo.isIPCoresIncluded();
             if (!allowIps && isIncluded) {
-                rmdir(fullPath, function(err) {
+                rmdir(fullPath, function (err) {
                     if (err) {
                         return console.error(err);
                     }
                 });
                 return reject({
-                    error: `Cannot synthesize project with IP cores, exclude/remove the modules (${names}) before synthesis.`
+                    error: `Cannot synthesize project with IP cores, exclude/remove the modules (${names}) before synthesis.`,
                 });
             }
             const rootTitle = rootEntry.title;
             const repoFolders = await repo.getEntries({
                 $or: [
                     {
-                        handler: EntryType.Folder
+                        handler: EntryType.Folder,
                     },
                     {
-                        handler: EntryType.IP
-                    }
-                ]
+                        handler: EntryType.IP,
+                    },
+                ],
             });
             let folderPath;
             const childrenMap = {};
@@ -2297,14 +2264,14 @@ const writeRepoFolderStructure = async (repo, allowIps, rootDir, cb) => {
             idMap[rootEntry._id] = rootEntry;
             foldersMeta[rootEntry._id] = {
                 title: rootEntry.title,
-                included: true
+                included: true,
             };
-            repoFolders.forEach(function(folder) {
+            repoFolders.forEach(function (folder) {
                 idMap[folder._id] = folder;
                 isIncluded[folder._id] = folder.included;
                 foldersMeta[folder._id] = {
                     title: folder.title,
-                    included: folder.included
+                    included: folder.included,
                 };
                 if (folder.parent != null) {
                     if (childrenMap[folder.parent] == null) {
@@ -2318,7 +2285,7 @@ const writeRepoFolderStructure = async (repo, allowIps, rootDir, cb) => {
 
             const fullPaths = {};
             const relativePaths = {};
-            repoFolders.forEach(function(folder) {
+            repoFolders.forEach(function (folder) {
                 folderPath = `${folder.title}`;
                 let folderParentId = folder.parent;
                 let folderParent = "";
@@ -2343,7 +2310,7 @@ const writeRepoFolderStructure = async (repo, allowIps, rootDir, cb) => {
                 return (relativePaths[folder._id] = folderPath);
             });
             const namesMap = {
-                files: {}
+                files: {},
             };
 
             const pathsArray = (() => {
@@ -2358,10 +2325,10 @@ const writeRepoFolderStructure = async (repo, allowIps, rootDir, cb) => {
             try {
                 await promiseSeries(
                     pathsArray.map(
-                        folderPath =>
+                        (folderPath) =>
                             new Promise(async (resolve, reject) => {
                                 await fs.mkdirp(folderPath, {
-                                    mode: 0o0777
+                                    mode: 0o0777,
                                 });
                             })
                     )
@@ -2371,18 +2338,17 @@ const writeRepoFolderStructure = async (repo, allowIps, rootDir, cb) => {
                     fullPath,
                     fullPaths,
                     relativePaths,
-                    foldersMeta
+                    foldersMeta,
                 });
             } catch (err) {
                 console.error(err);
-                rmdir(fullPath, function(err) {
+                rmdir(fullPath, function (err) {
                     if (err) {
                         return console.error(err);
                     }
                 });
                 return reject({
-                    error:
-                        "An error occurred while creating the repository structure."
+                    error: "An error occurred while creating the repository structure.",
                 });
             }
         } catch (err) {
@@ -2407,12 +2373,12 @@ var writeSynthesisContainerFiles = (
                 fullPath,
                 fullPaths,
                 relativePaths,
-                foldersMeta
+                foldersMeta,
             } = await writeRepoFolderStructure(repo, allowIps, rootDir);
 
             let verilogEntries = await repo.getSynthesizable();
             let excludedEntries = await repo.getExcludedVerilog();
-            verilogEntries = verilogEntries.filter(entry => {
+            verilogEntries = verilogEntries.filter((entry) => {
                 const isParentIncluded = foldersMeta[entry.parent].included;
                 if (!isParentIncluded) {
                     excludedEntries.push(entry);
@@ -2424,14 +2390,14 @@ var writeSynthesisContainerFiles = (
                 testbenches: [],
                 text: [],
                 topModule: repo.topModule,
-                exverilog: []
+                exverilog: [],
             };
             const namesMap = {
-                files: {}
+                files: {},
             };
             const writeEntries = (entries, key) =>
                 entries.map(
-                    entry =>
+                    (entry) =>
                         new Promise(async (resolve, reject) => {
                             try {
                                 const entryPath = path.join(
@@ -2444,8 +2410,7 @@ var writeSynthesisContainerFiles = (
                                 } catch (err) {
                                     console.error(err);
                                     return reject({
-                                        error:
-                                            "Failed to package repository files."
+                                        error: "Failed to package repository files.",
                                     });
                                 }
                                 const relativePath = path.join(
@@ -2460,7 +2425,7 @@ var writeSynthesisContainerFiles = (
                                 ] = entry._id;
                                 return resolve(entryPath);
                             } catch (err) {
-                                rmdir(fullPath, function(err) {
+                                rmdir(fullPath, function (err) {
                                     if (err) {
                                         return console.error(err);
                                     }
@@ -2473,7 +2438,7 @@ var writeSynthesisContainerFiles = (
             await Promise.all(writeEntries(excludedEntries, "exverilog"));
 
             const textFiles = await repo.getEntries({
-                handler: EntryType.TextFile
+                handler: EntryType.TextFile,
             });
 
             await Promise.all(writeEntries(textFiles, "text"));
@@ -2485,11 +2450,11 @@ var writeSynthesisContainerFiles = (
                     filePaths,
                     fullPaths,
                     relativePaths,
-                    namesMap
+                    namesMap,
                 });
             }
             const testbenches = await repo.getEntries({
-                handler: EntryType.TestbenchFile
+                handler: EntryType.TestbenchFile,
             });
             const commentsRegEx = () => new RegExp("\\/\\/.*$", "gm");
             const multiCommentsRegEx = () =>
@@ -2497,7 +2462,7 @@ var writeSynthesisContainerFiles = (
 
             await Promise.all(
                 testbenches.map(
-                    entry =>
+                    (entry) =>
                         new Promise(async (resolve, reject) => {
                             const entryPath = path.join(
                                 fullPaths[entry.parent],
@@ -2509,7 +2474,7 @@ var writeSynthesisContainerFiles = (
                             } catch (err) {
                                 console.error(err);
                                 return reject({
-                                    error: "Failed to package repository files."
+                                    error: "Failed to package repository files.",
                                 });
                             }
                             const relativePath = path.join(
@@ -2528,9 +2493,7 @@ var writeSynthesisContainerFiles = (
                                 .replace(multiCommentsRegEx(), "");
                             if (filePaths.topModule != null) {
                                 const topModuleRegex = new RegExp(
-                                    `${
-                                        filePaths.topModule
-                                    } +(\\w+) *\\([\\s\\S]+\\);?`,
+                                    `${filePaths.topModule} +(\\w+) *\\([\\s\\S]+\\);?`,
                                     "gmi"
                                 );
                                 if (topModuleRegex.test(content)) {
@@ -2539,14 +2502,11 @@ var writeSynthesisContainerFiles = (
                                             "^\\s*module\\s+(.+?)\\s*(#\\s*\\(([\\s\\S]+?)\\)\\s*)??\\s*((\\([\\s\\S]*?\\))?\\s*;)([\\s\\S]*?)endmodule",
                                             "gm"
                                         );
-                                    const moduleMatches = moduleRegEx().exec(
-                                        content
-                                    );
+                                    const moduleMatches =
+                                        moduleRegEx().exec(content);
                                     if (moduleMatches == null) {
                                         return callback({
-                                            error: `Invalid testbench ${
-                                                entry.title
-                                            }`
+                                            error: `Invalid testbench ${entry.title}`,
                                         });
                                     }
                                     filePaths.topModule = moduleMatches[1];
@@ -2562,7 +2522,7 @@ var writeSynthesisContainerFiles = (
                 filePaths,
                 fullPaths,
                 relativePaths,
-                namesMap
+                namesMap,
             });
         } catch (err) {
             return reject(err);
@@ -2583,7 +2543,7 @@ const writeCompilationContainerFiles = (
         cb = rootDir;
         rootDir = "";
     }
-    writeRepoFolderStructure(repo, false, rootDir, function(err, result) {
+    writeRepoFolderStructure(repo, false, rootDir, function (err, result) {
         if (err) {
             return cb(err);
         } else {
@@ -2592,9 +2552,9 @@ const writeCompilationContainerFiles = (
                 repoPath,
                 fullPaths,
                 relativePaths,
-                foldersMeta
+                foldersMeta,
             } = result;
-            return repo.getCompileable(function(err, swEntries) {
+            return repo.getCompileable(function (err, swEntries) {
                 if (err) {
                     return cb(err);
                 } else {
@@ -2603,22 +2563,22 @@ const writeCompilationContainerFiles = (
                         h: [],
                         linker: [],
                         startup: [],
-                        text: []
+                        text: [],
                     };
                     const namesMap = {
-                        files: {}
+                        files: {},
                     };
                     swEntries = swEntries.filter(
-                        entry => foldersMeta[entry.parent].included
+                        (entry) => foldersMeta[entry.parent].included
                     );
                     return async.eachSeries(
                         swEntries,
-                        function(entry, callback) {
+                        function (entry, callback) {
                             let needle;
                             if (
                                 [
                                     EntryType.LinkerScript,
-                                    EntryType.StartupScript
+                                    EntryType.StartupScript,
                                 ].includes(entry.handler) &&
                                 ((needle = entry._id.toString()),
                                 ![linkerFile, startupFile].includes(needle))
@@ -2630,29 +2590,30 @@ const writeCompilationContainerFiles = (
                                 entry.title
                             );
 
-                            return entry.getContent(function(err, content) {
+                            return entry.getContent(function (err, content) {
                                 if (err) {
                                     return callback(err);
                                 } else {
                                     return fs.writeFile(
                                         entryPath,
                                         content,
-                                        function(err) {
+                                        function (err) {
                                             if (err) {
                                                 console.error(err);
                                                 return callback({
-                                                    error:
-                                                        "Failed to package repository files."
+                                                    error: "Failed to package repository files.",
                                                 });
                                             } else {
                                                 let relativePath = path.join(
                                                     relativePaths[entry.parent],
                                                     entry.title
                                                 );
-                                                relativePath = relativePath.substr(
-                                                    relativePath.indexOf("/") +
-                                                        1
-                                                );
+                                                relativePath =
+                                                    relativePath.substr(
+                                                        relativePath.indexOf(
+                                                            "/"
+                                                        ) + 1
+                                                    );
 
                                                 if (
                                                     entry.handler ===
@@ -2695,9 +2656,9 @@ const writeCompilationContainerFiles = (
                                 }
                             });
                         },
-                        function(err) {
+                        function (err) {
                             if (err) {
-                                rmdir(repoPath, function(err) {
+                                rmdir(repoPath, function (err) {
                                     if (err) {
                                         return console.error(err);
                                     }
@@ -2706,22 +2667,25 @@ const writeCompilationContainerFiles = (
                             } else {
                                 return repo.getEntries(
                                     {
-                                        handler: EntryType.TextFile
+                                        handler: EntryType.TextFile,
                                     },
-                                    function(err, textFiles) {
+                                    function (err, textFiles) {
                                         if (err) {
                                             return cb(err);
                                         } else {
                                             return async.eachSeries(
                                                 textFiles,
-                                                function(entry, callback) {
+                                                function (entry, callback) {
                                                     const entryPath = path.join(
                                                         fullPaths[entry.parent],
                                                         entry.title
                                                     );
 
                                                     return entry.getContent(
-                                                        function(err, content) {
+                                                        function (
+                                                            err,
+                                                            content
+                                                        ) {
                                                             if (err) {
                                                                 return callback(
                                                                     err
@@ -2730,7 +2694,7 @@ const writeCompilationContainerFiles = (
                                                                 return fs.writeFile(
                                                                     entryPath,
                                                                     content,
-                                                                    function(
+                                                                    function (
                                                                         err
                                                                     ) {
                                                                         if (
@@ -2741,18 +2705,18 @@ const writeCompilationContainerFiles = (
                                                                             );
                                                                             return callback(
                                                                                 {
-                                                                                    error:
-                                                                                        "Failed to package repository files."
+                                                                                    error: "Failed to package repository files.",
                                                                                 }
                                                                             );
                                                                         } else {
-                                                                            const relativePath = path.join(
-                                                                                relativePaths[
-                                                                                    entry
-                                                                                        .parent
-                                                                                ],
-                                                                                entry.title
-                                                                            );
+                                                                            const relativePath =
+                                                                                path.join(
+                                                                                    relativePaths[
+                                                                                        entry
+                                                                                            .parent
+                                                                                    ],
+                                                                                    entry.title
+                                                                                );
                                                                             filePaths.text.push(
                                                                                 relativePath
                                                                             );
@@ -2776,11 +2740,11 @@ const writeCompilationContainerFiles = (
                                                         }
                                                     );
                                                 },
-                                                function(err) {
+                                                function (err) {
                                                     if (err) {
                                                         rmdir(
                                                             repoPath,
-                                                            function(err) {
+                                                            function (err) {
                                                                 if (err) {
                                                                     return console.error(
                                                                         err
@@ -2826,17 +2790,17 @@ const packageRepo = (repo, cb) => {
             } catch (err) {
                 console.error(err);
                 throw {
-                    error: "Failed to package."
+                    error: "Failed to package.",
                 };
             }
-            rmdir(repoPath, function(err) {
+            rmdir(repoPath, function (err) {
                 if (err) {
                     return console.error(err);
                 }
             });
             return resolve({
                 zipPath,
-                tempPath
+                tempPath,
             });
         } catch (err) {
             return reject(err);
@@ -2847,18 +2811,18 @@ const packageRepo = (repo, cb) => {
 };
 
 const streamRepo = (repo, cb) =>
-    packageRepo(repo, function(err, zipPath, tempPath) {
+    packageRepo(repo, function (err, zipPath, tempPath) {
         if (err) {
             return cb(err);
         } else {
             const stream = fs.createReadStream(zipPath);
-            stream.on("end", function() {
-                fs.unlink(zipPath, function(err) {
+            stream.on("end", function () {
+                fs.unlink(zipPath, function (err) {
                     if (err) {
                         return console.error(err);
                     }
                 });
-                return rmdir(tempPath, function(err) {
+                return rmdir(tempPath, function (err) {
                     if (err) {
                         return console.error(err);
                     }
@@ -2869,18 +2833,18 @@ const streamRepo = (repo, cb) =>
         }
     });
 
-const cleanupFiles = function(query, cb) {
+const cleanupFiles = function (query, cb) {
     if (query == null) {
         query = {};
     }
     query.deleted = true;
     const repoFileModel = mongoose.model("RepoFile");
-    return repoFileModel.find(query, function(err, files) {
+    return repoFileModel.find(query, function (err, files) {
         if (err) {
             return cb(err);
         } else {
-            files.forEach(file =>
-                clearFile(file.fsId, function(err) {
+            files.forEach((file) =>
+                clearFile(file.fsId, function (err) {
                     if (err) {
                         return console.error(err);
                     }
@@ -2923,5 +2887,5 @@ module.exports = {
     writeTempNetlist,
     packageRepo,
     streamRepo,
-    cleanupFiles
+    cleanupFiles,
 };

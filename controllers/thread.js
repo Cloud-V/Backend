@@ -8,15 +8,13 @@ const rmdir = require("rimraf");
 const async = require("async");
 const shortid = require("shortid");
 
-const {
-	Readable
-} = require("stream");
+const { Readable } = require("stream");
 
 const getComments = (entryId, cb) => cb(null, []);
 
 const getDiscussionThreads = function () {};
 
 module.exports = {
-	getComments,
-	getDiscussionThreads
+    getComments,
+    getDiscussionThreads,
 };

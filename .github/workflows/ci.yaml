@@ -1,6 +1,8 @@
 name: CI
 on:
   push:
+    branches:
+      - "*"
   pull_request:
   workflow_dispatch:
 
@@ -9,44 +11,49 @@ jobs:
     name: "Build"
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-    - name: Build Images
-      run: |
-        docker build -t cloudv/base:latest -f ./docker/base.Dockerfile .
-        docker build -t ${{ secrets.IMAGE_NAME }}:latest -f ./docker/cloudv.Dockerfile .
-        docker build -t ${{ secrets.LAMBDA_IMAGE_NAME }}:latest -f ./docker/lambda.Dockerfile .
-    - name: Get Tag
-      if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
-      run: |
-        echo TAG="$(ruby -e "print '$GITHUB_REF'.split('/')[2]")" >> $GITHUB_ENV
-    - name: Configure AWS Credentials
-      if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
-    - name: Login to Amazon ECR
-      if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-    - name: Push to ECR
-      if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-        LAMBDA_ECR_REPOSITORY: ${{ secrets.LAMBDA_ECR_REPOSITORY }}
-      run: |
-        docker image tag ${{ secrets.IMAGE_NAME }}:latest $ECR_REGISTRY/$ECR_REPOSITORY:$TAG 
-        docker image tag ${{ secrets.IMAGE_NAME }}:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest 
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 14
+      - name: Install Dependencies
+        run: yarn --production=false
+      - name: Lint
+        run: yarn lint
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Build Images
+        run: |
+          docker build -t cloudv/base:latest -f ./docker/base.Dockerfile .
+          docker build -t ${{ secrets.IMAGE_NAME }}:latest -f ./docker/cloudv.Dockerfile .
+          docker build -t ${{ secrets.LAMBDA_IMAGE_NAME }}:latest -f ./docker/lambda.Dockerfile .
+      - name: Export Branch Name, SHA
+        run: |
+          echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
+      - name: Configure AWS Credentials
+        if: ${{ github.event_name == 'push' && env.BRANCH_NAME == 'main' }}
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Login to Amazon ECR
+        if: ${{ github.event_name == 'push' && env.BRANCH_NAME == 'main' }}
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Push to ECR
+        if: ${{ github.event_name == 'push' && env.BRANCH_NAME == 'main' }}
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          LAMBDA_ECR_REPOSITORY: ${{ secrets.LAMBDA_ECR_REPOSITORY }}
+        run: |
+          docker image tag ${{ secrets.IMAGE_NAME }}:latest $ECR_REGISTRY/$ECR_REPOSITORY:$SHA_SHORT 
+          docker image tag ${{ secrets.IMAGE_NAME }}:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest 
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-        docker image tag ${{ secrets.LAMBDA_IMAGE_NAME }}:latest $ECR_REGISTRY/$LAMBDA_ECR_REPOSITORY:$TAG 
-        docker image tag ${{ secrets.LAMBDA_IMAGE_NAME }}:latest $ECR_REGISTRY/$LAMBDA_ECR_REPOSITORY:latest 
-        docker push $ECR_REGISTRY/$LAMBDA_ECR_REPOSITORY:latest
-
-        
+          docker image tag ${{ secrets.LAMBDA_IMAGE_NAME }}:latest $ECR_REGISTRY/$LAMBDA_ECR_REPOSITORY:$SHA_SHORT 
+          docker image tag ${{ secrets.LAMBDA_IMAGE_NAME }}:latest $ECR_REGISTRY/$LAMBDA_ECR_REPOSITORY:latest 
+          docker push $ECR_REGISTRY/$LAMBDA_ECR_REPOSITORY:latest

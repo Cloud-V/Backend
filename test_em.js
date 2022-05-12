@@ -1,6 +1,7 @@
 const parser = require("./modules/parser");
 
-console.log(parser.extractMetadata(`
+console.log(
+    parser.extractMetadata(`
 // file: potato.v
 // author: @potato
 
@@ -13,4 +14,5 @@ module potato(
   assign b = !a;
 endmodule
 
-`));
+`)
+);

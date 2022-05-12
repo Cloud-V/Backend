@@ -25,7 +25,7 @@ router.post("/synthesize", async (req, res, next) => {
         return res.status(200).json({
             reportErr,
             synthContent,
-            synthLog
+            synthLog,
         });
     } catch (err) {
         return res.status(500).json(err);
@@ -37,7 +37,7 @@ router.post("/bitstream", async (req, res, next) => {
         let { bitstreamContent, synthLog } = result;
         return res.status(200).json({
             bitstreamContent,
-            synthLog
+            synthLog,
         });
     } catch (err) {
         return res.status(500).json(err);
@@ -54,7 +54,7 @@ router.post("/sw", async (req, res, next) => {
         return res.status(200).json({
             hexContent,
             listContent,
-            compilationLog
+            compilationLog,
         });
     } catch (err) {
         return res.status(500).json(err);
@@ -63,17 +63,13 @@ router.post("/sw", async (req, res, next) => {
 router.post("/simulate-testbench", async (req, res, next) => {
     try {
         const result = await LambdaManager.simulateTestbench(req.body);
-        let {
-            simulationErrors,
-            simulationWarnings,
-            simulationLog,
-            vcd
-        } = result;
+        let { simulationErrors, simulationWarnings, simulationLog, vcd } =
+            result;
         if (vcd == null || vcd.trim() === "") {
             return res.json({
                 errors: simulationErrors,
                 warnings: simulationWarnings,
-                log: simulationLog
+                log: simulationLog,
             });
         } else {
             const wave = await Simulator.generateWave(vcd);
@@ -82,7 +78,7 @@ router.post("/simulate-testbench", async (req, res, next) => {
                 warnings: simulationWarnings,
                 log: simulationLog,
                 wave,
-                vcd
+                vcd,
             });
         }
     } catch (err) {
@@ -93,17 +89,13 @@ router.post("/simulate-testbench", async (req, res, next) => {
 router.post("/simulate-netlist", async (req, res, next) => {
     try {
         const result = await LambdaManager.simulateNetlist(req.body);
-        let {
-            simulationErrors,
-            simulationWarnings,
-            simulationLog,
-            vcd
-        } = result;
+        let { simulationErrors, simulationWarnings, simulationLog, vcd } =
+            result;
         if (vcd == null || vcd.trim() === "") {
             return res.json({
                 errors: simulationErrors,
                 warnings: simulationWarnings,
-                log: simulationLog
+                log: simulationLog,
             });
         } else {
             const wave = await Simulator.generateWave(vcd);
@@ -112,7 +104,7 @@ router.post("/simulate-netlist", async (req, res, next) => {
                 warnings: simulationWarnings,
                 log: simulationLog,
                 wave,
-                vcd
+                vcd,
             });
         }
         return res.status(200).json(result.logs);
@@ -140,9 +132,9 @@ function prepareRepo(req, res, next, cb) {
     return Repo.getRepo(
         {
             repoName,
-            ownerName
+            ownerName,
         },
-        function(err, repo) {
+        function (err, repo) {
             if (err) {
                 return res.status(500).json(err);
             } else if (!repo) {
