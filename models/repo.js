@@ -3303,7 +3303,6 @@ repoSchema.methods.relocateMultiple = async function ({
         }
 
         let allFolders = await this.p.getEntries({ handler: EntryType.Folder });
-
         const foldersMap = {};
         allFolders.forEach((elem) => {
             return (foldersMap[elem.id] = elem);
@@ -3321,7 +3320,7 @@ repoSchema.methods.relocateMultiple = async function ({
             });
         }
 
-        let allEntries = await self.p.getEntries({ $or: allEntriesQuery });
+        let allEntries = await this.p.getEntries({ $or: allEntriesQuery });
 
         const processedItems = [];
         const failedItems = [];
@@ -3348,7 +3347,7 @@ repoSchema.methods.relocateMultiple = async function ({
                     });
                     let validChildren = allChildren.filter(
                         (child) =>
-                            child.id !== self.buildDir &&
+                            child.id !== this.buildDir &&
                             ![
                                 EntryType.UnkownEntry,
                                 EntryType.RepoRoot,
@@ -3399,7 +3398,7 @@ repoSchema.methods.relocateMultiple = async function ({
 
         for (elem of Array.from(allEntries)) {
             if (
-                elem._id.toString() === self.buildDir ||
+                elem._id.toString() === this.buildDir ||
                 [
                     EntryType.UnkownEntry,
                     EntryType.RepoRoot,
@@ -3427,7 +3426,7 @@ repoSchema.methods.relocateMultiple = async function ({
         }
 
         for (let entry of allEntries) {
-            await recurseEntry(entry, targetId, callback);
+            await recurseEntry(entry, targetId);
         }
 
         return cb(null, processedItems, failedItems, failErrors);
