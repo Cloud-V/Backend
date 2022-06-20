@@ -7,7 +7,8 @@ const { EntryType } = require("../models/repo_entry");
 const _ = require("underscore");
 const fs = require("fs-extra");
 const tmp = require("tmp");
-const Grid = require("gridfs-stream");
+const Grid = require("gridfs_stream_local");
+
 const rmdir = require("rimraf");
 const async = require("async");
 const shortid = require("shortid");
@@ -32,20 +33,22 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
             repo: repoEntry.repo,
             user: repoEntry.user,
             repoEntry: repoEntry._id,
+            fileName: fsName,
             baseName: fileData.originalname,
             mimeType: fileData.mimetype,
             encoding: fileData.encoding,
             extension: fileData.extension,
         });
-        const gfs = Grid(dbfs.db);
-
-        const inputStream = new Readable();
-        inputStream.push(content);
-        inputStream.push(null);
+        const gfs = new Grid(dbfs);
+        // const inputStream = new Readable();
+        // inputStream.push(content);
+        // inputStream.push(null);
         const outputSteam = gfs.createWriteStream({
             filename: fsName,
         });
-        inputStream.pipe(outputSteam);
+        // inputStream.pipe(outputSteam);
+
+        outputSteam.write(content);
 
         outputSteam.on("error", function (err) {
             if (err === undefined) {
@@ -57,7 +60,7 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
             });
         });
 
-        return outputSteam.on("close", async (file) => {
+        outputSteam.on("close", async (file) => {
             newFileEntry.fsId = file._id;
             try {
                 newFileEntry = await newFileEntry.save();
@@ -94,7 +97,8 @@ const createMediaFile = async ({ path, buffer }, metadata, cb) => {
             encoding: metadata.encoding,
             extension: metadata.extension,
         });
-        const gfs = Grid(dbfs.db);
+
+        const gfs = new Grid(dbfs);
 
         const inputStream = fs.createReadStream(filePath);
         const outputStream = gfs.createWriteStream({
@@ -113,7 +117,7 @@ const createMediaFile = async ({ path, buffer }, metadata, cb) => {
             });
         });
 
-        return outputStream.on("close", async (file) => {
+        outputStream.on("close", async (file) => {
             buffer && (await fs.unlink(filePath));
             newFileEntry.fsId = file._id;
             try {
@@ -128,6 +132,7 @@ const createMediaFile = async ({ path, buffer }, metadata, cb) => {
                 );
             }
         });
+        return;
     })
         .then(wrapResolveCallback(cb))
         .catch(cb);
@@ -160,12 +165,14 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
                 repo: copiedItem.repo,
                 user: copiedItem.user,
                 repoEntry: copiedItem._id,
+                fileName: fsName,
                 baseName: fileData.baseName,
                 mimeType: fileData.mimeType,
                 encoding: fileData.encoding,
                 extension: fileData.extension,
             });
-            const gfs = Grid(dbfs.db);
+
+            const gfs = new Grid(dbfs);
 
             const inputStream = new Readable();
             inputStream.push(content);
@@ -215,10 +222,13 @@ const clearFileEntry = async (repoEntry, cb) => {
             if (!fileEntry) {
                 return resolve(true);
             }
+            console.error("Here X");
             await clearFile(fileEntry.fsId);
+            console.error("Here 2X");
             const deletedEntry = await updateFileEntry(fileEntry._id, {
                 deleted: true,
             });
+            console.error("Here 3X");
             return resolve(deletedEntry);
         } catch (err) {
             return reject(err);
@@ -227,6 +237,7 @@ const clearFileEntry = async (repoEntry, cb) => {
         .then(wrapResolveCallback(cb))
         .catch(cb);
 };
+
 const clearMediaFileEntry = async (mediaEntry, cb) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -248,7 +259,8 @@ const clearMediaFileEntry = async (mediaEntry, cb) => {
         .then(wrapResolveCallback(cb))
         .catch(cb);
 };
-const updateFile = (repoEntry, newContent, cb) =>
+
+const updateFile = (repoEntry, newContent, cb) => {
     getFileEntry(
         {
             repoEntry: repoEntry._id,
@@ -261,7 +273,7 @@ const updateFile = (repoEntry, newContent, cb) =>
                     error: "File not found!",
                 });
             } else {
-                const gfs = Grid(dbfs.db);
+                const gfs = new Grid(dbfs);
                 const fsName =
                     shortid.generate() +
                     "_" +
@@ -286,9 +298,9 @@ const updateFile = (repoEntry, newContent, cb) =>
                     });
                 });
 
-                return outputSteam.on("close", function (file) {
+                outputSteam.on("close", function (file) {
                     const oldFsId = fileEntry.fsId;
-                    return updateFileEntry(
+                    updateFileEntry(
                         fileEntry._id,
                         {
                             fsId: file._id,
@@ -307,13 +319,15 @@ const updateFile = (repoEntry, newContent, cb) =>
                         }
                     );
                 });
+                return;
             }
         }
     );
+};
 
 var clearFile = async (fsId, cb) => {
     return new Promise(async (resolve, reject) => {
-        const gfs = Grid(dbfs.db);
+        const gfs = new Grid(dbfs);
         gfs.remove(
             {
                 _id: fsId,
@@ -333,7 +347,7 @@ var clearFile = async (fsId, cb) => {
         .catch(cb);
 };
 
-const checkFileExistence = (repoEntry, cb) =>
+const checkFileExistence = (repoEntry, cb) => {
     getFileEntry(
         {
             repoEntry: repoEntry._id,
@@ -350,9 +364,10 @@ const checkFileExistence = (repoEntry, cb) =>
             }
         }
     );
+};
 
 var fileExists = function (fsId, cb) {
-    const gfs = Grid(dbfs.db);
+    const gfs = new Grid(dbfs);
     return gfs.exist(
         {
             _id: fsId,
@@ -488,9 +503,14 @@ const getFileEntry = async (query, opts = {}, cb) => {
         opts = {};
     }
     if (query == null) {
+        //Shouldn't this return an error?
         query = {};
     }
-    query.deleted = false;
+
+    //repoEntry must be a string
+    // if (query.repoEntry)
+    //     query.repoEntry = `${query.repoEntry}`
+
     return new Promise(async (resolve, reject) => {
         const dbQuery = mongoose.model("RepoFile").findOne(query);
         try {
@@ -550,12 +570,13 @@ const getFileEntries = function (query, cb) {
 const getFileContent = async (repoEntry, cb) => {
     return new Promise(async (resolve, reject) => {
         try {
+            let tempFileEntry = await getFileEntry({});
             const fileEntry = await getFileEntry({
                 repoEntry: repoEntry._id,
             });
             if (!fileEntry) {
                 return reject({
-                    error: "File entry not found!",
+                    error: "File entry not found 2!",
                 });
             }
             const content = await readFile(fileEntry.fsId);
@@ -568,31 +589,7 @@ const getFileContent = async (repoEntry, cb) => {
         .catch(cb);
 };
 
-const getMediaFileStream = (mediaEntry, cb) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const entryId = getMongooseId(mediaEntry);
-            const entry = await getMediaFileEntry({
-                _id: entryId,
-            });
-            if (!entry) {
-                return reject({
-                    error: "Media entry not found",
-                });
-            }
-            const gfs = Grid(dbfs.db);
-            const stream = gfs.createReadStream({
-                _id: entry.fsId,
-            });
-            return resolve(stream);
-        } catch (err) {
-            return reject(err);
-        }
-    })
-        .then(wrapResolveCallback(cb))
-        .catch(cb);
-};
-const getFileStream = (repoEntry, cb) =>
+const getFileStream = (repoEntry, cb) => {
     getFileEntry(
         {
             repoEntry: repoEntry._id,
@@ -605,42 +602,75 @@ const getFileStream = (repoEntry, cb) =>
                     error: "File entry not found!",
                 });
             } else {
-                const gfs = Grid(dbfs.db);
+                const gfs = new Grid(dbfs);
                 const stream = gfs.createReadStream({
                     _id: fileEntry.fsId,
                 });
+                stream.run();
                 return cb(null, stream);
             }
         }
     );
+};
+const getMediaFileStream = (mediaEntry, cb) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const entryId = getMongooseId(mediaEntry);
+            const entry = await getMediaFileEntry({
+                _id: entryId,
+            });
+            if (!entry) {
+                return reject({
+                    error: "Media entry not found",
+                });
+            }
+
+            const gfs = new Grid(dbfs);
+            const stream = gfs.createReadStream({
+                _id: entry.fsId,
+            });
+            stream.run();
+            return resolve(stream);
+        } catch (err) {
+            return reject(err);
+        }
+    })
+        .then(wrapResolveCallback(cb))
+        .catch(cb);
+};
 
 const readFile = async (fsId, cb) => {
     return new Promise(async (resolve, reject) => {
-        const gfs = Grid(dbfs.db);
+        // const gfs = Grid(dbfs);
+        const gfs = new Grid(dbfs);
         let content = "";
         const stream = gfs.createReadStream({
             _id: fsId,
         });
-        stream.on("data", (chunk) => (content = content + chunk));
+        stream.on("data", (chunk) => {
+            content = content + chunk;
+        });
 
         stream.on("error", (err) => {
-            if (err === undefined) {
-                return;
-            }
+            // if (err === undefined) {
+            //     return
+            // }
             console.error(err);
             return reject({
-                error: "Failed to retrieve file content.",
+                error: "Failed to retrieve file content. 1",
             });
         });
-        return stream.on("end", () => {
+        stream.on("close", () => {
             if (content == null) {
                 return reject({
-                    error: "Failed to retrieve file content.",
+                    error: "Failed to retrieve file content. 2",
                 });
             } else {
                 return resolve(content);
             }
         });
+        stream.run();
+        return;
     })
         .then(wrapResolveCallback(cb))
         .catch(cb);
@@ -2010,6 +2040,7 @@ var writeTestbenchSimulationStructure = function (repo, depth, rootDir, cb) {
         }
     );
 };
+
 const writeTestbenchSimulationContainerFiles = (
     repo,
     item,
@@ -2073,6 +2104,7 @@ const writeTestbenchSimulationContainerFiles = (
         }
     );
 };
+
 const writeNetlistSimulationContainerFiles = (
     repo,
     item,
@@ -2531,6 +2563,7 @@ var writeSynthesisContainerFiles = (
         .then(wrapResolveCallback(cb))
         .catch(cb);
 };
+
 const writeCompilationContainerFiles = (
     repo,
     target,
@@ -2810,7 +2843,7 @@ const packageRepo = (repo, cb) => {
         .catch(cb);
 };
 
-const streamRepo = (repo, cb) =>
+const streamRepo = (repo, cb) => {
     packageRepo(repo, function (err, zipPath, tempPath) {
         if (err) {
             return cb(err);
@@ -2832,6 +2865,7 @@ const streamRepo = (repo, cb) =>
             return cb(null, stream);
         }
     });
+};
 
 const cleanupFiles = function (query, cb) {
     if (query == null) {

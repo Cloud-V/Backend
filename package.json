@@ -40,6 +40,7 @@
         "fs-extra": "^7.0.0",
         "google-auth-library": "^7.0.4",
         "gridfs-stream": "^1.1.1",
+        "gridfs_stream_local": "https://github.com/Cloud-V/gridfs_stream_local",
         "hcaptcha": "^0.0.2",
         "html-minifier": "^3.5.20",
         "isbinaryfile": "3.0.2",

@@ -3303,6 +3303,7 @@ repoSchema.methods.relocateMultiple = async function ({
         }
 
         let allFolders = await this.p.getEntries({ handler: EntryType.Folder });
+
         const foldersMap = {};
         allFolders.forEach((elem) => {
             return (foldersMap[elem.id] = elem);
@@ -3426,7 +3427,7 @@ repoSchema.methods.relocateMultiple = async function ({
         }
 
         for (let entry of allEntries) {
-            await recurseEntry(entry, targetId);
+            await recurseEntry(entry, targetId, callback);
         }
 
         return cb(null, processedItems, failedItems, failErrors);
@@ -3528,81 +3529,69 @@ repoSchema.methods.deleteEntry = async function (
         .catch(cb);
 };
 
-repoSchema.methods.deleteMultiple = function (entryIds, overwrite, cb) {
+repoSchema.methods.deleteMultiple = async function (entryIds, overwrite, cb) {
     if (overwrite == null) {
         overwrite = false;
     }
+
     const deletedItems = [];
     const failedItems = [];
     const failErrors = [];
-    return async.each(
-        entryIds,
-        (entryId, callback) => {
-            return this.getEntry(
-                {
-                    _id: entryId,
-                },
-                (err, entry) => {
-                    if (err) {
-                        failedItems.push(
-                            entry
-                                ? entry
-                                : {
-                                      _id: entryId,
-                                  }
-                        );
-                        failErrors.push(err);
-                        return callback();
-                    } else if (!entry) {
-                        failedItems.push({
-                            _id: entryId,
-                        });
-                        failErrors.push({
-                            error: `Item ${entryId} not found`,
-                        });
-                        return callback();
-                    } else if (
-                        entry.access <= EntryAccess.ReadOnly &&
-                        ![
-                            EntryType.NetlistFile,
-                            EntryType.TextFile,
-                            EntryType.VCDFile,
-                            EntryType.SynthesisReport,
-                            EntryType.IP,
-                            EntryType.BinaryFile,
-                        ].includes(entry.handler)
-                    ) {
-                        failedItems.push(entry);
-                        failErrors.push({
-                            error: "Cannot delete read-only entry.",
-                        });
-                        return callback();
-                    } else {
-                        return this.deleteEntry(
-                            entry._id,
-                            false,
-                            (err, deletedItem) => {
-                                if (err) {
-                                    failedItems.push(entry);
-                                    failErrors.push(err);
-                                    return callback();
-                                } else {
-                                    deletedItems.push(deletedItem);
-                                    return callback();
-                                }
-                            }
-                        );
-                    }
-                }
-            );
-        },
-        (err) => {
-            if (err) {
-                return cb(err);
+
+    for (let entryId of entryIds) {
+        try {
+            let entry = await this.p.getEntry({ _id: entryId }).catch((err) => {
+                throw { error: err, entry: entry ?? { _id: entryId } };
+            });
+
+            if (!entry) {
+                throw {
+                    entry: {
+                        _id: entryId,
+                    },
+                    error: {
+                        error: `Item ${entryId} not found`,
+                    },
+                };
             }
-            return cb(null, deletedItems, failedItems, failErrors);
+
+            if (
+                entry.access <= EntryAccess.ReadOnly &&
+                ![
+                    EntryType.NetlistFile,
+                    EntryType.TextFile,
+                    EntryType.VCDFile,
+                    EntryType.SynthesisReport,
+                    EntryType.IP,
+                    EntryType.BinaryFile,
+                ].includes(entry.handler)
+            ) {
+                throw {
+                    entry,
+                    error: { error: "Cannot delete read-only entry." },
+                };
+                x;
+            }
+
+            console.log("Here?");
+
+            let deletedItem = await this.p
+                .deleteEntry(entry._id, false)
+                .catch((err) => {
+                    throw { error: err, entry: entry };
+                });
+
+            console.log("Here 2?");
+
+            deletedItems.push(deletedItem);
+        } catch (obj) {
+            let { error, entry } = obj;
+            failErrors.push(err);
+            failedItems.push(entry);
         }
-    );
+    }
+
+    return cb(null, deletedItems, failedItems, failErrors);
 };
 
 repoSchema.methods.duplicateEntry = function (entryId, newname, overwrite, cb) {
