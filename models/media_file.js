@@ -25,8 +25,8 @@ const mediaFileSchema = new Schema(
         extension: {
             type: String,
         },
-        fsId: {
-            type: ObjectId,
+        fileName: {
+            type: String,
             required: true,
         },
         deleted: {

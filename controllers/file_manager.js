@@ -36,43 +36,16 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
             mimeType: fileData.mimetype,
             encoding: fileData.encoding,
             extension: fileData.extension,
+            fileName: fsName
         });
-        const gfs = Grid(dbfs.db);
-
-        const inputStream = new Readable();
-        inputStream.push(content);
-        inputStream.push(null);
-        const outputSteam = gfs.createWriteStream({
-            filename: fsName,
-        });
-        inputStream.pipe(outputSteam);
-
-        outputSteam.on("error", function (err) {
-            if (err === undefined) {
-                return;
-            }
-            console.error(err);
-            return reject({
-                error: "An error occurred while writing the file.",
-            });
-        });
-
-        return outputSteam.on("close", async (file) => {
-            newFileEntry.fsId = file._id;
-            try {
-                newFileEntry = await newFileEntry.save();
-                return resolve(newFileEntry);
-            } catch (err) {
-                return reject(
-                    handleMongooseError(
-                        err,
-                        "An error occurred while creating the file entry."
-                    )
-                );
-            }
-        });
-    })
-        .then(wrapResolveCallback(cb))
+        try {
+            fs.writeFileSync(fsName, content)
+            newFileEntry = await newFileEntry.save();
+            return resolve(newFileEntry);
+        } catch (error) {
+            return reject(error)
+        }
+    }).then(wrapResolveCallback(cb))
         .catch(cb);
 };
 
@@ -93,41 +66,16 @@ const createMediaFile = async ({ path, buffer }, metadata, cb) => {
             mimeType: metadata.mimetype,
             encoding: metadata.encoding,
             extension: metadata.extension,
+            fileName: fsName
         });
-        const gfs = Grid(dbfs.db);
-
-        const inputStream = fs.createReadStream(filePath);
-        const outputStream = gfs.createWriteStream({
-            filename: fsName,
-        });
-        inputStream.pipe(outputStream);
-
-        outputStream.on("error", async (err) => {
-            if (err === undefined) {
-                return;
-            }
-            buffer && (await fs.unlink(filePath));
-            console.error(err);
-            return reject({
-                error: "An error occurred while writing the file.",
-            });
-        });
-
-        return outputStream.on("close", async (file) => {
-            buffer && (await fs.unlink(filePath));
-            newFileEntry.fsId = file._id;
-            try {
-                newFileEntry = await newFileEntry.save();
-                return resolve(newFileEntry);
-            } catch (err) {
-                return reject(
-                    handleMongooseError(
-                        err,
-                        "An error occurred while creating the file entry."
-                    )
-                );
-            }
-        });
+        try {
+            fs.writeFileSync(fsName, content)
+            newFileEntry = await newFileEntry.save();
+            console.log("Media File Created")
+            return resolve(newFileEntry);
+        } catch (error) {
+            return reject(error)
+        }
     })
         .then(wrapResolveCallback(cb))
         .catch(cb);
@@ -164,40 +112,11 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
                 mimeType: fileData.mimeType,
                 encoding: fileData.encoding,
                 extension: fileData.extension,
+                fileName: fsName
             });
-            const gfs = Grid(dbfs.db);
-
-            const inputStream = new Readable();
-            inputStream.push(content);
-            inputStream.push(null);
-            const outputSteam = gfs.createWriteStream({
-                filename: fsName,
-            });
-            inputStream.pipe(outputSteam);
-
-            outputSteam.on("error", function (err) {
-                if (err === undefined) {
-                    return;
-                }
-                console.error(err);
-                return reject({
-                    error: "An error occurred while writing the file.",
-                });
-            });
-            outputSteam.on("close", async (file) => {
-                newFileEntry.fsId = file._id;
-                try {
-                    await newFileEntry.save();
-                    return resolve(newFileEntry);
-                } catch (err) {
-                    return reject(
-                        handleMongooseError(
-                            err,
-                            "An error occurred while creating the file entry."
-                        )
-                    );
-                }
-            });
+            fs.writeFileSync(fsName, content)
+            await newFileEntry.save();
+            return resolve(newFileEntry)
         } catch (err) {
             return reject(err);
         }
@@ -215,7 +134,7 @@ const clearFileEntry = async (repoEntry, cb) => {
             if (!fileEntry) {
                 return resolve(true);
             }
-            await clearFile(fileEntry.fsId);
+            await clearFile(fileEntry.fileName);
             const deletedEntry = await updateFileEntry(fileEntry._id, {
                 deleted: true,
             });
@@ -236,7 +155,7 @@ const clearMediaFileEntry = async (mediaEntry, cb) => {
             if (!fileEntry) {
                 return resolve(true);
             }
-            await clearFile(fileEntry.fsId);
+            await clearFile(fileEntry.fileName);
             const deletedEntry = await updateMediaFileEntry(fileEntry._id, {
                 deleted: true,
             });
@@ -248,12 +167,15 @@ const clearMediaFileEntry = async (mediaEntry, cb) => {
         .then(wrapResolveCallback(cb))
         .catch(cb);
 };
-const updateFile = (repoEntry, newContent, cb) =>
+
+const updateFile = (repoEntry, newContent, cb) => {
+    console.log("Updating file")
     getFileEntry(
         {
             repoEntry: repoEntry._id,
         },
         function (err, fileEntry) {
+            console.log("File name: ", fileEntry.fileName)
             if (err) {
                 return cb(err);
             } else if (!fileEntry) {
@@ -261,73 +183,27 @@ const updateFile = (repoEntry, newContent, cb) =>
                     error: "File not found!",
                 });
             } else {
-                const gfs = Grid(dbfs.db);
-                const fsName =
-                    shortid.generate() +
-                    "_" +
-                    Date.now() +
-                    "." +
-                    fileEntry.extension;
-                const inputStream = new Readable();
-                inputStream.push(newContent);
-                inputStream.push(null);
-                const outputSteam = gfs.createWriteStream({
-                    filename: fsName,
-                });
-                inputStream.pipe(outputSteam);
+                try {
+                    fs.writeFileSync(fileEntry.fileName, newContent)
+                    return cb(null)
+                } catch (error) {
+                    return cb(error)
+                }
 
-                outputSteam.on("error", function (err) {
-                    if (err === undefined) {
-                        return;
-                    }
-                    console.error(err);
-                    return cb({
-                        error: "An error occurred while writing the file.",
-                    });
-                });
-
-                return outputSteam.on("close", function (file) {
-                    const oldFsId = fileEntry.fsId;
-                    return updateFileEntry(
-                        fileEntry._id,
-                        {
-                            fsId: file._id,
-                        },
-                        function (err, saveEntry) {
-                            if (err) {
-                                return cb(err);
-                            } else {
-                                cb(null, fileEntry);
-                                return clearFile(oldFsId, function (err) {
-                                    if (err) {
-                                        return console.error(err);
-                                    }
-                                });
-                            }
-                        }
-                    );
-                });
             }
         }
     );
+}
 
-var clearFile = async (fsId, cb) => {
+
+var clearFile = async (fileName, cb) => {
     return new Promise(async (resolve, reject) => {
-        const gfs = Grid(dbfs.db);
-        gfs.remove(
-            {
-                _id: fsId,
-            },
-            function (err) {
-                if (err) {
-                    return reject({
-                        error: "Failed to remove the file.",
-                    });
-                } else {
-                    return resolve(null);
-                }
-            }
-        );
+        try {
+            await fs.unlinkSync(fileName);
+            return resolve(null)
+        } catch (error) {
+            return reject(error)
+        }
     })
         .then(wrapResolveCallback(cb))
         .catch(cb);
@@ -346,28 +222,17 @@ const checkFileExistence = (repoEntry, cb) =>
                     error: "File entry not found!",
                 });
             } else {
-                return fileExists(fileEntry.fsId, cb);
+                return fileExists(fileEntry.fileName, cb);
             }
         }
     );
 
-var fileExists = function (fsId, cb) {
-    const gfs = Grid(dbfs.db);
-    return gfs.exist(
-        {
-            _id: fsId,
-        },
-        function (err, found) {
-            if (err) {
-                console.error(err);
-                return cb({
-                    error: "Failed to check for file existence.",
-                });
-            } else {
-                return cb(null, found);
-            }
-        }
-    );
+var fileExists = function (fileName, cb) {
+    try {
+        return cb(null, fs.existsSync(filename))
+    } catch (error) {
+        return (error)
+    }
 };
 
 const updateFileEntry = async (entryId, updates, cb) => {
@@ -558,7 +423,7 @@ const getFileContent = async (repoEntry, cb) => {
                     error: "File entry not found!",
                 });
             }
-            const content = await readFile(fileEntry.fsId);
+            const content = await readFile(fileEntry.fileName);
             return resolve(content);
         } catch (err) {
             return reject(err);
@@ -580,10 +445,7 @@ const getMediaFileStream = (mediaEntry, cb) => {
                     error: "Media entry not found",
                 });
             }
-            const gfs = Grid(dbfs.db);
-            const stream = gfs.createReadStream({
-                _id: entry.fsId,
-            });
+            let stream = fs.createReadStream(entry.fileName);
             return resolve(stream);
         } catch (err) {
             return reject(err);
@@ -592,7 +454,7 @@ const getMediaFileStream = (mediaEntry, cb) => {
         .then(wrapResolveCallback(cb))
         .catch(cb);
 };
-const getFileStream = (repoEntry, cb) =>
+const getFileStream = (repoEntry, cb) => {
     getFileEntry(
         {
             repoEntry: repoEntry._id,
@@ -605,42 +467,26 @@ const getFileStream = (repoEntry, cb) =>
                     error: "File entry not found!",
                 });
             } else {
-                const gfs = Grid(dbfs.db);
-                const stream = gfs.createReadStream({
-                    _id: fileEntry.fsId,
-                });
-                return cb(null, stream);
+                try {
+                    let stream = fs.createReadStream(fileEntry.fileName);
+                    return cb(null, stream);
+                } catch (error) {
+                    return cb(error);
+                }
             }
         }
     );
+}
 
-const readFile = async (fsId, cb) => {
+
+const readFile = async (fileName, cb) => {
     return new Promise(async (resolve, reject) => {
-        const gfs = Grid(dbfs.db);
-        let content = "";
-        const stream = gfs.createReadStream({
-            _id: fsId,
-        });
-        stream.on("data", (chunk) => (content = content + chunk));
-
-        stream.on("error", (err) => {
-            if (err === undefined) {
-                return;
-            }
-            console.error(err);
-            return reject({
-                error: "Failed to retrieve file content.",
-            });
-        });
-        return stream.on("end", () => {
-            if (content == null) {
-                return reject({
-                    error: "Failed to retrieve file content.",
-                });
-            } else {
-                return resolve(content);
-            }
-        });
+        try {
+            let data = fs.readFileSync(fileName)
+            return resolve(data)
+        } catch (error) {
+            return reject(error)
+        }
     })
         .then(wrapResolveCallback(cb))
         .catch(cb);
@@ -695,7 +541,7 @@ var writeTempSimulationModules = function (
                                     )}\\`;
                                     let parentId =
                                         folder.parent.toString() ===
-                                        rootEntry._id.toString()
+                                            rootEntry._id.toString()
                                             ? null
                                             : folder.parent.toString();
                                     let parentFolder = idMap[parentId];
@@ -706,7 +552,7 @@ var writeTempSimulationModules = function (
                                         )}\\${folderPath}`;
                                         parentId =
                                             parentFolder.parent.toString() ===
-                                            rootEntry._id.toString()
+                                                rootEntry._id.toString()
                                                 ? null
                                                 : parentFolder.parent.toString();
                                         parentFolder = idMap[parentId];
@@ -743,14 +589,13 @@ var writeTempSimulationModules = function (
                                                                 entry,
                                                                 callback
                                                             ) {
-                                                                const fileName = `${
-                                                                    folderPaths[
-                                                                        entry
-                                                                            .parent
-                                                                    ]
-                                                                }${encodeURIComponent(
-                                                                    entry.title
-                                                                )}`;
+                                                                const fileName = `${folderPaths[
+                                                                    entry
+                                                                        .parent
+                                                                ]
+                                                                    }${encodeURIComponent(
+                                                                        entry.title
+                                                                    )}`;
 
                                                                 fileNames[
                                                                     entry._id
@@ -812,9 +657,9 @@ var writeTempSimulationModules = function (
                                                                                 );
                                                                             if (
                                                                                 depth ===
-                                                                                    0 &&
+                                                                                0 &&
                                                                                 entry ===
-                                                                                    testbenchEntry
+                                                                                testbenchEntry
                                                                             ) {
                                                                                 //TODO: Remove comments!
                                                                                 let moduleRegEx =
@@ -835,9 +680,8 @@ var writeTempSimulationModules = function (
                                                                                         }
                                                                                     );
                                                                                 }
-                                                                                dumpName = `${
-                                                                                    testbenchEntry.title
-                                                                                }_${Date.now()}.vcd`;
+                                                                                dumpName = `${testbenchEntry.title
+                                                                                    }_${Date.now()}.vcd`;
                                                                                 if (
                                                                                     /\$\s*stop/.test(
                                                                                         content
@@ -850,25 +694,17 @@ var writeTempSimulationModules = function (
                                                                                     );
                                                                                 }
                                                                                 const finishAppend = `\n#${simulationTime};\n$finish;\n`;
-                                                                                content = `${
-                                                                                    matches[1]
-                                                                                }${
-                                                                                    matches[2]
-                                                                                } ${
-                                                                                    matches[3]
-                                                                                } ${
-                                                                                    matches[4]
+                                                                                content = `${matches[1]
+                                                                                    }${matches[2]
+                                                                                    } ${matches[3]
+                                                                                    } ${matches[4]
                                                                                         ? matches[4]
                                                                                         : ""
-                                                                                };${
-                                                                                    matches[5]
-                                                                                }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(0, ${
-                                                                                    matches[3]
-                                                                                }); ${finishAppend}end\n${
-                                                                                    matches[6]
-                                                                                }${
-                                                                                    matches[7]
-                                                                                }`;
+                                                                                    };${matches[5]
+                                                                                    }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(0, ${matches[3]
+                                                                                    }); ${finishAppend}end\n${matches[6]
+                                                                                    }${matches[7]
+                                                                                    }`;
                                                                             }
                                                                             return fs.writeFile(
                                                                                 `${fullPath}${fileName}`,
@@ -970,41 +806,40 @@ var writeTempSimulationModules = function (
                                                                                                         }
                                                                                                     );
                                                                                                 } else {
-                                                                                                    const fileName = `${
-                                                                                                        folderPaths[
-                                                                                                            ipEntry
-                                                                                                                .parent
-                                                                                                        ]
-                                                                                                    }${encodeURIComponent(
-                                                                                                        ipEntry.title
-                                                                                                    )}`;
+                                                                                                    const fileName = `${folderPaths[
+                                                                                                        ipEntry
+                                                                                                            .parent
+                                                                                                    ]
+                                                                                                        }${encodeURIComponent(
+                                                                                                            ipEntry.title
+                                                                                                        )}`;
 
                                                                                                     fileNames[
                                                                                                         ipEntry._id
                                                                                                     ] =
-                                                                                                        {
-                                                                                                            tempName:
-                                                                                                                fileName,
-                                                                                                            sourceName:
-                                                                                                                ipEntry.title,
-                                                                                                        };
+                                                                                                    {
+                                                                                                        tempName:
+                                                                                                            fileName,
+                                                                                                        sourceName:
+                                                                                                            ipEntry.title,
+                                                                                                    };
 
                                                                                                     reverseMap[
                                                                                                         fileName
                                                                                                     ] =
-                                                                                                        {
-                                                                                                            sourceName:
-                                                                                                                ipEntry.title,
-                                                                                                            sourceId:
-                                                                                                                ipEntry._id,
-                                                                                                        };
+                                                                                                    {
+                                                                                                        sourceName:
+                                                                                                            ipEntry.title,
+                                                                                                        sourceId:
+                                                                                                            ipEntry._id,
+                                                                                                    };
                                                                                                     return writeTempSimulationModules(
                                                                                                         ipRepo,
                                                                                                         false,
                                                                                                         0,
                                                                                                         `${fullPath}/${fileName}\\`,
                                                                                                         depth +
-                                                                                                            1,
+                                                                                                        1,
                                                                                                         function (
                                                                                                             err
                                                                                                         ) {
@@ -1225,13 +1060,10 @@ const writeNetlistSimulationModules = async (
                 }
                 let finishAppend = `\n#${simulationTime};\n$finish;\n`;
 
-                content = `${matches[1]}${matches[2]} ${matches[3]} ${
-                    matches[4] ? matches[4] : ""
-                };${
-                    matches[5]
-                }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(1, ${
-                    matches[3]
-                }); ${finishAppend}end\n${matches[6]}${matches[7]}`;
+                content = `${matches[1]}${matches[2]} ${matches[3]} ${matches[4] ? matches[4] : ""
+                    };${matches[5]
+                    }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(1, ${matches[3]
+                    }); ${finishAppend}end\n${matches[6]}${matches[7]}`;
             }
 
             await fs
@@ -1313,7 +1145,7 @@ const writeTempRepoModules = function (repo, cb) {
                                 )}\\`;
                                 let parentId =
                                     folder.parent.toString() ===
-                                    rootEntry._id.toString()
+                                        rootEntry._id.toString()
                                         ? null
                                         : folder.parent.toString();
                                 let parentFolder = idMap[parentId];
@@ -1324,7 +1156,7 @@ const writeTempRepoModules = function (repo, cb) {
                                     )}\\${folderPath}`;
                                     parentId =
                                         parentFolder.parent.toString() ===
-                                        rootEntry._id.toString()
+                                            rootEntry._id.toString()
                                             ? null
                                             : parentFolder.parent.toString();
                                     parentFolder = idMap[parentId];
@@ -1357,13 +1189,12 @@ const writeTempRepoModules = function (repo, cb) {
                                                 verilogEntries,
                                                 function (entry, callback) {
                                                     //fileName = shortid.generate() + '_' + Date.now() + '.v'
-                                                    const fileName = `${
-                                                        folderPaths[
-                                                            entry.parent
-                                                        ]
-                                                    }${encodeURIComponent(
-                                                        entry.title
-                                                    )}`;
+                                                    const fileName = `${folderPaths[
+                                                        entry.parent
+                                                    ]
+                                                        }${encodeURIComponent(
+                                                            entry.title
+                                                        )}`;
 
                                                     fileNames[entry._id] = {
                                                         tempName: fileName,
@@ -1762,13 +1593,10 @@ const writeTestbenchFile = function (
                 });
             }
             const finishAppend = `\n#${simulationTime};\n$finish;\n`;
-            content = `${matches[1]}${matches[2]} ${matches[3]} ${
-                matches[4] ? matches[4] : ""
-            };${
-                matches[5]
-            }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(${
-                level || 0
-            }, ${matches[3]}); ${finishAppend}end\n${matches[6]}${matches[7]}`;
+            content = `${matches[1]}${matches[2]} ${matches[3]} ${matches[4] ? matches[4] : ""
+                };${matches[5]
+                }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(${level || 0
+                }, ${matches[3]}); ${finishAppend}end\n${matches[6]}${matches[7]}`;
             const testbenchPath = path.join(
                 parentPaths[testbenchEntry.parent],
                 testbenchEntry.title
@@ -1870,8 +1698,8 @@ const writeIPCoreFiles = function (
                                                                 filePaths.verilog.push(
                                                                     path.join(
                                                                         relativeParentPaths[
-                                                                            ipEntry
-                                                                                ._id
+                                                                        ipEntry
+                                                                            ._id
                                                                         ],
                                                                         filePath
                                                                     )
@@ -1881,7 +1709,7 @@ const writeIPCoreFiles = function (
                                                                 const fileId =
                                                                     ipNamesMap
                                                                         .files[
-                                                                        fileName
+                                                                    fileName
                                                                     ];
                                                                 if (
                                                                     namesMap.ips ==
@@ -1893,7 +1721,7 @@ const writeIPCoreFiles = function (
                                                                 if (
                                                                     namesMap
                                                                         .ips[
-                                                                        depth
+                                                                    depth
                                                                     ] == null
                                                                 ) {
                                                                     namesMap.ips[
@@ -1903,10 +1731,10 @@ const writeIPCoreFiles = function (
                                                                 if (
                                                                     namesMap
                                                                         .ips[
-                                                                        depth
+                                                                    depth
                                                                     ][
-                                                                        ipEntry
-                                                                            .title
+                                                                    ipEntry
+                                                                        .title
                                                                     ] == null
                                                                 ) {
                                                                     namesMap.ips[
@@ -2581,7 +2409,7 @@ const writeCompilationContainerFiles = (
                                     EntryType.StartupScript,
                                 ].includes(entry.handler) &&
                                 ((needle = entry._id.toString()),
-                                ![linkerFile, startupFile].includes(needle))
+                                    ![linkerFile, startupFile].includes(needle))
                             ) {
                                 return callback();
                             }
@@ -2712,8 +2540,8 @@ const writeCompilationContainerFiles = (
                                                                             const relativePath =
                                                                                 path.join(
                                                                                     relativePaths[
-                                                                                        entry
-                                                                                            .parent
+                                                                                    entry
+                                                                                        .parent
                                                                                     ],
                                                                                     entry.title
                                                                                 );
@@ -2725,7 +2553,7 @@ const writeCompilationContainerFiles = (
                                                                                     relativePath.indexOf(
                                                                                         "/"
                                                                                     ) +
-                                                                                        1
+                                                                                    1
                                                                                 )
                                                                             ] =
                                                                                 entry._id;
@@ -2844,7 +2672,7 @@ const cleanupFiles = function (query, cb) {
             return cb(err);
         } else {
             files.forEach((file) =>
-                clearFile(file.fsId, function (err) {
+                clearFile(file.fileName, function (err) {
                     if (err) {
                         return console.error(err);
                     }

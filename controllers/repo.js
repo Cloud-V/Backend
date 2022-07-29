@@ -151,7 +151,7 @@ const createRepo = async (repo, cb) => {
         } catch (err) {
             createdRepo
                 .remove()
-                .then(() => {})
+                .then(() => { })
                 .catch(console.error);
             return reject(err);
         }
@@ -161,7 +161,7 @@ const createRepo = async (repo, cb) => {
         } catch (err) {
             createdRepo
                 .remove()
-                .then(() => {})
+                .then(() => { })
                 .catch(console.error);
             return reject(
                 handleMongooseError(
@@ -363,7 +363,7 @@ const cloneRepo = async (sourceRepo, repoData, cb) => {
                             } catch (err) {
                                 clonedEntry
                                     .remove()
-                                    .then(() => {})
+                                    .then(() => { })
                                     .catch(console.error);
                                 throw err;
                             }
@@ -394,7 +394,7 @@ const cloneRepo = async (sourceRepo, repoData, cb) => {
         } catch (err) {
             if (repoCreated) {
                 deleteRepo(newRepo)
-                    .then(() => {})
+                    .then(() => { })
                     .catch(console.error);
             }
             return reject(err);
@@ -466,7 +466,7 @@ const deleteRepo = async (repo, cb) => {
                         Promise.all(
                             _.map(roles, (role) => removeRole(role._id))
                         )
-                            .then(() => {})
+                            .then(() => { })
                             .catch(console.error);
                     } catch (err) {
                         return reject(err);
@@ -536,13 +536,13 @@ const createRepoEntry = async (entry, overwrite, cb) => {
                 const entryExists = await getRepoEntry(
                     isRoot
                         ? {
-                              handler: EntryType.RepoRoot,
-                              repo: entry.repo,
-                          }
+                            handler: EntryType.RepoRoot,
+                            repo: entry.repo,
+                        }
                         : {
-                              title: entry.title,
-                              parent: entry.parent,
-                          }
+                            title: entry.title,
+                            parent: entry.parent,
+                        }
                 );
                 if (entryExists) {
                     if (isRoot) {
@@ -939,23 +939,23 @@ const getRepoStructureByType = async (repoId, query, format = "jstree", cb) => {
             query =
                 format === "jstree"
                     ? _.defaults(
-                          {
-                              repo: repoId,
-                          },
-                          query
-                      )
+                        {
+                            repo: repoId,
+                        },
+                        query
+                    )
                     : {
-                          repo: repoId,
-                          $or: [
-                              {
-                                  handler: EntryType.Folder,
-                              },
-                              {
-                                  handler: EntryType.RepoRoot,
-                              },
-                              query,
-                          ],
-                      };
+                        repo: repoId,
+                        $or: [
+                            {
+                                handler: EntryType.Folder,
+                            },
+                            {
+                                handler: EntryType.RepoRoot,
+                            },
+                            query,
+                        ],
+                    };
             const entries = await getRepoEntries(query);
             if (format === "json") {
                 return resolve(entris);
@@ -2065,7 +2065,7 @@ const cleanupRepoEntries = function (query, cb) {
                         } else {
                             return files.forEach((file) =>
                                 FileManager.clearFile(
-                                    file.fsId,
+                                    file.fileName,
                                     function (err) {
                                         if (err) {
                                             return console.error(err);
@@ -3267,9 +3267,8 @@ const createRepoVersion = async (query, versionData, cb) => {
             newVersion.repoPrivacy = repo.privacy;
             newVersion.repoName = repo.repoName;
             newVersion.versionUser = user._id;
-            const cloneName = `${repo.repoName}_${newVersion.title}_${
-                newVersion.number
-            }_${shortid.generate()}`.replace(/[^\w]+/gm, "_");
+            const cloneName = `${repo.repoName}_${newVersion.title}_${newVersion.number
+                }_${shortid.generate()}`.replace(/[^\w]+/gm, "_");
             clonedRepo = await repo.clone({
                 owner: user._id,
                 repoTitle: cloneName,
@@ -3284,7 +3283,7 @@ const createRepoVersion = async (query, versionData, cb) => {
                 console.error(err);
                 if (repoCreated) {
                     deleteRepo(clonedRepo)
-                        .then(() => {})
+                        .then(() => { })
                         .catch(console.error);
                 }
                 return reject({
@@ -3294,7 +3293,7 @@ const createRepoVersion = async (query, versionData, cb) => {
         } catch (err) {
             if (repoCreated) {
                 deleteRepo(clonedRepo)
-                    .then(() => {})
+                    .then(() => { })
                     .catch(console.error);
             }
             return reject(err);
@@ -3368,9 +3367,8 @@ const createRepoVersion = async (query, versionData, cb) => {
                                 newVersion.repoName = repo.repoName;
                                 newVersion.versionUser = user._id;
                                 // deleteRepo newRepo, (err) -> console.error err if err
-                                let cloneName = `${repo.repoName}_${
-                                    newVersion.title
-                                }_${newVersion.number}_${shortid.generate()}`;
+                                let cloneName = `${repo.repoName}_${newVersion.title
+                                    }_${newVersion.number}_${shortid.generate()}`;
                                 cloneName = cloneName.replace(/[^\w]+/gm, "_");
                                 return repo.clone(
                                     {
@@ -3510,7 +3508,7 @@ const deleteRepoVersion = async (versionId, cb) => {
                 console.error("Source file do not exist!");
             } else {
                 deleteRepo(repo)
-                    .then(() => {})
+                    .then(() => { })
                     .catch(console.error);
             }
             version.deleted = true;
