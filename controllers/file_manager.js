@@ -482,7 +482,7 @@ const getFileStream = (repoEntry, cb) => {
 const readFile = async (fileName, cb) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let data = fs.readFileSync(fileName)
+            let data = fs.readFileSync(fileName).toString('utf8')
             return resolve(data)
         } catch (error) {
             return reject(error)
