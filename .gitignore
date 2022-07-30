@@ -125,3 +125,6 @@ modules/lambda/*/*.zip
 
 # MongoDB
 /mongo
+
+#Repo Files
+/repo_files/*

@@ -26,7 +26,7 @@ const {
 const createFile = async (repoEntry, fileData, content = "", cb) => {
     const fileModel = require("../models/repo_file").model;
     return new Promise(async (resolve, reject) => {
-        const fsName =
+        const fsName = config.repoFilesPath + "/" +
             shortid.generate() + "_" + Date.now() + "." + fileData.extension;
         let newFileEntry = new fileModel({
             repo: repoEntry.repo,
@@ -58,8 +58,9 @@ const createMediaFile = async ({ path, buffer }, metadata, cb) => {
             filePath = tmp.tmpNameSync();
             fs.writeFileSync(filePath, buffer);
         }
-        const fsName =
-            shortid.generate() + "_" + Date.now() + "." + metadata.extension;
+        const fsName = config.repoFilesPath + "/" +
+            shortid.generate() + "_" + Date.now() + "." + fileData.extension;
+
         let newFileEntry = new fileModel({
             user: metadata.user,
             baseName: metadata.originalname,
@@ -71,7 +72,6 @@ const createMediaFile = async ({ path, buffer }, metadata, cb) => {
         try {
             fs.writeFileSync(fsName, content)
             newFileEntry = await newFileEntry.save();
-            console.log("Media File Created")
             return resolve(newFileEntry);
         } catch (error) {
             return reject(error)
@@ -98,12 +98,9 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
                     error: "Undefined!",
                 });
             }
-            const fsName =
-                shortid.generate() +
-                "_" +
-                Date.now() +
-                "." +
-                fileData.extension;
+            const fsName = config.repoFilesPath + "/" +
+                shortid.generate() + "_" + Date.now() + "." + fileData.extension;
+
             const newFileEntry = new fileModel({
                 repo: copiedItem.repo,
                 user: copiedItem.user,
@@ -169,13 +166,11 @@ const clearMediaFileEntry = async (mediaEntry, cb) => {
 };
 
 const updateFile = (repoEntry, newContent, cb) => {
-    console.log("Updating file")
     getFileEntry(
         {
             repoEntry: repoEntry._id,
         },
         function (err, fileEntry) {
-            console.log("File name: ", fileEntry.fileName)
             if (err) {
                 return cb(err);
             } else if (!fileEntry) {
