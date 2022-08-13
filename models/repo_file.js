@@ -32,6 +32,9 @@ const repoFileSchema = new Schema(
             type: String,
             required: true,
         },
+        fsId: {
+            type: ObjectId,
+        },
         created: {
             type: Date,
             required: true,
