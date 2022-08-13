@@ -16,7 +16,7 @@ const main = async () => {
         await dbfs
         const gfs = Grid(dbfs.db, mongoose.mongo);
 
-        let res = await db.model("RepoFile").find({}).exec()
+        let res = await db.model("RepoFile").find({ deleted: false }).exec()
         //201
 
         for (let cur of res) {
