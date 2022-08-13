@@ -24,7 +24,7 @@ const main = async () => {
             //Get file
             let file = await gfs.files.findOne({ _id: cur.fsId })
             if (!file || !file.filename) {
-                // console.log(`${fileName} repo file fsid does not exist in gridfs-stream files`)
+                console.log(`${fileName} repo file fsid does not exist in gridfs-stream files`)
                 fsidsNotInGFSFiles++;
                 continue
             }
@@ -40,7 +40,7 @@ const main = async () => {
             gfs.exist({ _id: cur.fsId }, function (err, found) {
                 if (err) throw err;
                 if (!found) {
-                    // console.log(`${fileName} repo file fsid does not exist in gridfs-stream chunks`)
+                    console.log(`${fileName} repo file fsid does not exist in gridfs-stream chunks`)
                     fsidsNotInGFSChunks++
                     throw (`${fileName} repo file fsid does not exist in gridfs-stream chunks`)
                 }
@@ -51,14 +51,17 @@ const main = async () => {
             });
 
             stream.on("data", (chunk) => (content = content + chunk));
-            stream.on("end", () => {
-                //Create file
-                fs.writeFileSync(fileName, content)
-                console.log(`${createdSuccessfully}: ${repo.repoName}/${cur.baseName}`)
-                createdSuccessfully++
+            await new Promise((resolve) => {
+                stream.on("end", () => {
+                    fs.writeFileSync(fileName, content)
+                    console.log(`${createdSuccessfully}: ${repo.repoName}/${cur.baseName}`)
+                    createdSuccessfully++
+                    content = ""
+                    resolve()
+                })
             });
             stream.on("error", err => {
-                // console.log("Error reading file content");
+                console.log("Error reading file content");
                 errorReadingFileContent++;
                 throw err;
             })
