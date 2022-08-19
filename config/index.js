@@ -214,8 +214,8 @@ let defaultPort =
     servedComponent === "api"
         ? 3000
         : servedComponent === "processing"
-            ? 4040
-            : 9999;
+        ? 4040
+        : 9999;
 let port = normalizePort(process.env.PORT || defaultPort);
 
 let webhook = process.env.CLOUDV_WEBHOOK || `http://localhost:${port}/webhook`;
@@ -277,5 +277,5 @@ module.exports = {
     port,
     frontend,
     proc,
-    repoFilesPath
+    repoFilesPath,
 };
