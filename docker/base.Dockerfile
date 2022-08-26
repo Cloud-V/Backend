@@ -1,4 +1,4 @@
-ARG BASE_IMAGE="public.ecr.aws/bitnami/node:14"
+ARG BASE_IMAGE="node:14-buster"
 
 FROM ${BASE_IMAGE}
 
@@ -25,9 +25,6 @@ RUN $INST libreadline-dev gawk tcl-dev libffi-dev \
     graphviz xdot pkg-config libboost-all-dev zlib1g-dev \
     libftdi-dev qt5-default libeigen3-dev xz-utils \
     python3 python3-pip python3-dev
-
-### Thanks cmake
-ENV LD_LIBRARY_PATH /opt/bitnami/python/lib/
 
 RUN curl -L https://github.com/Cloud-V/icestorm-builder/releases/download/0.0.2/icestorm.tar.xz | tar -xJC /
 

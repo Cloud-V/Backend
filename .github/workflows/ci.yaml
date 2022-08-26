@@ -27,33 +27,47 @@ jobs:
         run: |
           docker build -t cloudv/base:latest -f ./docker/base.Dockerfile .
           docker build -t ${{ secrets.IMAGE_NAME }}:latest -f ./docker/cloudv.Dockerfile .
-          docker build -t ${{ secrets.LAMBDA_IMAGE_NAME }}:latest -f ./docker/lambda.Dockerfile .
+          # docker build -t ${{ secrets.LAMBDA_IMAGE_NAME }}:latest -f ./docker/lambda.Dockerfile .
       - name: Export Branch Name, SHA
         run: |
           echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "BRANCH_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
-      - name: Configure AWS Credentials
+      - name: Log in to the Container registry
         if: ${{ github.event_name == 'push' && env.BRANCH_NAME == 'main' }}
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      - name: Login to Amazon ECR
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push to GHCR
         if: ${{ github.event_name == 'push' && env.BRANCH_NAME == 'main' }}
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-      - name: Push to ECR
-        if: ${{ github.event_name == 'push' && env.BRANCH_NAME == 'main' }}
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          LAMBDA_ECR_REPOSITORY: ${{ secrets.LAMBDA_ECR_REPOSITORY }}
         run: |
-          docker image tag ${{ secrets.IMAGE_NAME }}:latest $ECR_REGISTRY/$ECR_REPOSITORY:$SHA_SHORT 
-          docker image tag ${{ secrets.IMAGE_NAME }}:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest 
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker image tag ${{ secrets.IMAGE_NAME }}:latest ghcr.io/cloud-v/backend:latest
+          docker image tag ${{ secrets.IMAGE_NAME }}:latest ghcr.io/cloud-v/backend:$SHA_SHORT
+          docker push ghcr.io/cloud-v/backend:latest
+          docker push ghcr.io/cloud-v/backend:$SHA_SHORT
+      # - name: Configure AWS Credentials
+      #   if: ${{ github.event_name == 'push' && env.BRANCH_NAME == 'main' }}
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ secrets.AWS_REGION }}
+      # - name: Login to Amazon ECR
+      #   if: ${{ github.event_name == 'push' && env.BRANCH_NAME == 'main' }}
+      #   id: login-ecr
+      #   uses: aws-actions/amazon-ecr-login@v1
+      # - name: Push to ECR
+      #   if: ${{ github.event_name == 'push' && env.BRANCH_NAME == 'main' }}
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      #     LAMBDA_ECR_REPOSITORY: ${{ secrets.LAMBDA_ECR_REPOSITORY }}
+      #   run: |
+      #     docker image tag ${{ secrets.IMAGE_NAME }}:latest $ECR_REGISTRY/$ECR_REPOSITORY:$SHA_SHORT
+      #     docker image tag ${{ secrets.IMAGE_NAME }}:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-          docker image tag ${{ secrets.LAMBDA_IMAGE_NAME }}:latest $ECR_REGISTRY/$LAMBDA_ECR_REPOSITORY:$SHA_SHORT 
-          docker image tag ${{ secrets.LAMBDA_IMAGE_NAME }}:latest $ECR_REGISTRY/$LAMBDA_ECR_REPOSITORY:latest 
-          docker push $ECR_REGISTRY/$LAMBDA_ECR_REPOSITORY:latest
+      #     docker image tag ${{ secrets.LAMBDA_IMAGE_NAME }}:latest $ECR_REGISTRY/$LAMBDA_ECR_REPOSITORY:$SHA_SHORT
+      #     docker image tag ${{ secrets.LAMBDA_IMAGE_NAME }}:latest $ECR_REGISTRY/$LAMBDA_ECR_REPOSITORY:latest
+      #     docker push $ECR_REGISTRY/$LAMBDA_ECR_REPOSITORY:latest
