@@ -35,7 +35,7 @@ const main = async () => {
             }
 
             //Filename
-            fileName = config.repoFilesPath + "/" + file.filename;
+            fileName = file.filename;
 
             //Update filename of RepoFile
             cur.fileName = fileName;
@@ -60,7 +60,7 @@ const main = async () => {
             stream.on("data", (chunk) => (content = content + chunk));
             await new Promise((resolve) => {
                 stream.on("end", () => {
-                    fs.writeFileSync(fileName, content);
+                    fs.writeFileSync(config.repoFilesPath + "/" + fileName, content);
                     console.log(
                         `${createdSuccessfully}: ${repo.repoName}/${cur.baseName}`
                     );
