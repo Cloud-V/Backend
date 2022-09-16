@@ -3,6 +3,7 @@ const mongoose = require("../config/db");
 const dbfs = require("../config/dbfs");
 const Utils = require("../models/utils");
 const { EntryType } = require("../models/repo_entry");
+const googleCloudStorageManager = require("../modules/google-cloud/storage-manager");
 
 const _ = require("underscore");
 const fs = require("fs-extra");
@@ -27,8 +28,6 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
     const fileModel = require("../models/repo_file").model;
     return new Promise(async (resolve, reject) => {
         const fsName =
-            config.repoFilesPath +
-            "/" +
             shortid.generate() +
             "_" +
             Date.now() +
@@ -45,7 +44,7 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
             fileName: fsName,
         });
         try {
-            fs.writeFileSync(fsName, content);
+            await googleCloudStorageManager.upload(fsName, content);
             newFileEntry = await newFileEntry.save();
             return resolve(newFileEntry);
         } catch (error) {
@@ -63,11 +62,9 @@ const createMediaFile = async ({ path, buffer }, metadata, cb) => {
         let filePath = path;
         if (buffer) {
             filePath = tmp.tmpNameSync();
-            fs.writeFileSync(filePath, buffer);
+            await googleCloudStorageManager.upload(filePath, buffer);
         }
         const fsName =
-            config.repoFilesPath +
-            "/" +
             shortid.generate() +
             "_" +
             Date.now() +
@@ -83,7 +80,7 @@ const createMediaFile = async ({ path, buffer }, metadata, cb) => {
             fileName: fsName,
         });
         try {
-            fs.writeFileSync(fsName, content);
+            await googleCloudStorageManager.upload(fsName, content);
             newFileEntry = await newFileEntry.save();
             return resolve(newFileEntry);
         } catch (error) {
@@ -112,8 +109,6 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
                 });
             }
             const fsName =
-                config.repoFilesPath +
-                "/" +
                 shortid.generate() +
                 "_" +
                 Date.now() +
@@ -130,7 +125,7 @@ const duplicateFile = async (copiedItem, oldItem, cb) => {
                 extension: fileData.extension,
                 fileName: fsName,
             });
-            fs.writeFileSync(fsName, content);
+            await googleCloudStorageManager.upload(fsName, content);
             await newFileEntry.save();
             return resolve(newFileEntry);
         } catch (err) {
@@ -189,7 +184,7 @@ const updateFile = (repoEntry, newContent, cb) => {
         {
             repoEntry: repoEntry._id,
         },
-        function (err, fileEntry) {
+        async function (err, fileEntry) {
             if (err) {
                 return cb(err);
             } else if (!fileEntry) {
@@ -198,7 +193,7 @@ const updateFile = (repoEntry, newContent, cb) => {
                 });
             } else {
                 try {
-                    fs.writeFileSync(fileEntry.fileName, newContent);
+                    await googleCloudStorageManager.upload(fileEntry.fileName, newContent);
                     return cb(null);
                 } catch (error) {
                     return cb(error);
@@ -211,7 +206,7 @@ const updateFile = (repoEntry, newContent, cb) => {
 var clearFile = async (fileName, cb) => {
     return new Promise(async (resolve, reject) => {
         try {
-            await fs.unlinkSync(fileName);
+            await googleCloudStorageManager.remove(fileName);
             return resolve(null);
         } catch (error) {
             return reject(error);
@@ -239,9 +234,10 @@ const checkFileExistence = (repoEntry, cb) =>
         }
     );
 
-var fileExists = function (fileName, cb) {
+const fileExists = async (fileName, cb) => {
     try {
-        return cb(null, fs.existsSync(filename));
+        let existenceStatus = await googleCloudStorageManager.exists(fileName);
+        return cb(null, existenceStatus);
     } catch (error) {
         return error;
     }
@@ -493,7 +489,7 @@ const getFileStream = (repoEntry, cb) => {
 const readFile = async (fileName, cb) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let data = fs.readFileSync(fileName).toString("utf8");
+            let data = await googleCloudStorageManager.read(fileName);
             return resolve(data);
         } catch (error) {
             return reject(error);
@@ -552,7 +548,7 @@ var writeTempSimulationModules = function (
                                     )}\\`;
                                     let parentId =
                                         folder.parent.toString() ===
-                                        rootEntry._id.toString()
+                                            rootEntry._id.toString()
                                             ? null
                                             : folder.parent.toString();
                                     let parentFolder = idMap[parentId];
@@ -563,7 +559,7 @@ var writeTempSimulationModules = function (
                                         )}\\${folderPath}`;
                                         parentId =
                                             parentFolder.parent.toString() ===
-                                            rootEntry._id.toString()
+                                                rootEntry._id.toString()
                                                 ? null
                                                 : parentFolder.parent.toString();
                                         parentFolder = idMap[parentId];
@@ -600,14 +596,13 @@ var writeTempSimulationModules = function (
                                                                 entry,
                                                                 callback
                                                             ) {
-                                                                const fileName = `${
-                                                                    folderPaths[
-                                                                        entry
-                                                                            .parent
-                                                                    ]
-                                                                }${encodeURIComponent(
-                                                                    entry.title
-                                                                )}`;
+                                                                const fileName = `${folderPaths[
+                                                                    entry
+                                                                        .parent
+                                                                ]
+                                                                    }${encodeURIComponent(
+                                                                        entry.title
+                                                                    )}`;
 
                                                                 fileNames[
                                                                     entry._id
@@ -669,9 +664,9 @@ var writeTempSimulationModules = function (
                                                                                 );
                                                                             if (
                                                                                 depth ===
-                                                                                    0 &&
+                                                                                0 &&
                                                                                 entry ===
-                                                                                    testbenchEntry
+                                                                                testbenchEntry
                                                                             ) {
                                                                                 //TODO: Remove comments!
                                                                                 let moduleRegEx =
@@ -692,9 +687,8 @@ var writeTempSimulationModules = function (
                                                                                         }
                                                                                     );
                                                                                 }
-                                                                                dumpName = `${
-                                                                                    testbenchEntry.title
-                                                                                }_${Date.now()}.vcd`;
+                                                                                dumpName = `${testbenchEntry.title
+                                                                                    }_${Date.now()}.vcd`;
                                                                                 if (
                                                                                     /\$\s*stop/.test(
                                                                                         content
@@ -707,25 +701,17 @@ var writeTempSimulationModules = function (
                                                                                     );
                                                                                 }
                                                                                 const finishAppend = `\n#${simulationTime};\n$finish;\n`;
-                                                                                content = `${
-                                                                                    matches[1]
-                                                                                }${
-                                                                                    matches[2]
-                                                                                } ${
-                                                                                    matches[3]
-                                                                                } ${
-                                                                                    matches[4]
+                                                                                content = `${matches[1]
+                                                                                    }${matches[2]
+                                                                                    } ${matches[3]
+                                                                                    } ${matches[4]
                                                                                         ? matches[4]
                                                                                         : ""
-                                                                                };${
-                                                                                    matches[5]
-                                                                                }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(0, ${
-                                                                                    matches[3]
-                                                                                }); ${finishAppend}end\n${
-                                                                                    matches[6]
-                                                                                }${
-                                                                                    matches[7]
-                                                                                }`;
+                                                                                    };${matches[5]
+                                                                                    }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(0, ${matches[3]
+                                                                                    }); ${finishAppend}end\n${matches[6]
+                                                                                    }${matches[7]
+                                                                                    }`;
                                                                             }
                                                                             return fs.writeFile(
                                                                                 `${fullPath}${fileName}`,
@@ -827,41 +813,40 @@ var writeTempSimulationModules = function (
                                                                                                         }
                                                                                                     );
                                                                                                 } else {
-                                                                                                    const fileName = `${
-                                                                                                        folderPaths[
-                                                                                                            ipEntry
-                                                                                                                .parent
-                                                                                                        ]
-                                                                                                    }${encodeURIComponent(
-                                                                                                        ipEntry.title
-                                                                                                    )}`;
+                                                                                                    const fileName = `${folderPaths[
+                                                                                                        ipEntry
+                                                                                                            .parent
+                                                                                                    ]
+                                                                                                        }${encodeURIComponent(
+                                                                                                            ipEntry.title
+                                                                                                        )}`;
 
                                                                                                     fileNames[
                                                                                                         ipEntry._id
                                                                                                     ] =
-                                                                                                        {
-                                                                                                            tempName:
-                                                                                                                fileName,
-                                                                                                            sourceName:
-                                                                                                                ipEntry.title,
-                                                                                                        };
+                                                                                                    {
+                                                                                                        tempName:
+                                                                                                            fileName,
+                                                                                                        sourceName:
+                                                                                                            ipEntry.title,
+                                                                                                    };
 
                                                                                                     reverseMap[
                                                                                                         fileName
                                                                                                     ] =
-                                                                                                        {
-                                                                                                            sourceName:
-                                                                                                                ipEntry.title,
-                                                                                                            sourceId:
-                                                                                                                ipEntry._id,
-                                                                                                        };
+                                                                                                    {
+                                                                                                        sourceName:
+                                                                                                            ipEntry.title,
+                                                                                                        sourceId:
+                                                                                                            ipEntry._id,
+                                                                                                    };
                                                                                                     return writeTempSimulationModules(
                                                                                                         ipRepo,
                                                                                                         false,
                                                                                                         0,
                                                                                                         `${fullPath}/${fileName}\\`,
                                                                                                         depth +
-                                                                                                            1,
+                                                                                                        1,
                                                                                                         function (
                                                                                                             err
                                                                                                         ) {
@@ -1082,13 +1067,10 @@ const writeNetlistSimulationModules = async (
                 }
                 let finishAppend = `\n#${simulationTime};\n$finish;\n`;
 
-                content = `${matches[1]}${matches[2]} ${matches[3]} ${
-                    matches[4] ? matches[4] : ""
-                };${
-                    matches[5]
-                }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(1, ${
-                    matches[3]
-                }); ${finishAppend}end\n${matches[6]}${matches[7]}`;
+                content = `${matches[1]}${matches[2]} ${matches[3]} ${matches[4] ? matches[4] : ""
+                    };${matches[5]
+                    }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(1, ${matches[3]
+                    }); ${finishAppend}end\n${matches[6]}${matches[7]}`;
             }
 
             await fs
@@ -1170,7 +1152,7 @@ const writeTempRepoModules = function (repo, cb) {
                                 )}\\`;
                                 let parentId =
                                     folder.parent.toString() ===
-                                    rootEntry._id.toString()
+                                        rootEntry._id.toString()
                                         ? null
                                         : folder.parent.toString();
                                 let parentFolder = idMap[parentId];
@@ -1181,7 +1163,7 @@ const writeTempRepoModules = function (repo, cb) {
                                     )}\\${folderPath}`;
                                     parentId =
                                         parentFolder.parent.toString() ===
-                                        rootEntry._id.toString()
+                                            rootEntry._id.toString()
                                             ? null
                                             : parentFolder.parent.toString();
                                     parentFolder = idMap[parentId];
@@ -1214,13 +1196,12 @@ const writeTempRepoModules = function (repo, cb) {
                                                 verilogEntries,
                                                 function (entry, callback) {
                                                     //fileName = shortid.generate() + '_' + Date.now() + '.v'
-                                                    const fileName = `${
-                                                        folderPaths[
-                                                            entry.parent
-                                                        ]
-                                                    }${encodeURIComponent(
-                                                        entry.title
-                                                    )}`;
+                                                    const fileName = `${folderPaths[
+                                                        entry.parent
+                                                    ]
+                                                        }${encodeURIComponent(
+                                                            entry.title
+                                                        )}`;
 
                                                     fileNames[entry._id] = {
                                                         tempName: fileName,
@@ -1619,13 +1600,10 @@ const writeTestbenchFile = function (
                 });
             }
             const finishAppend = `\n#${simulationTime};\n$finish;\n`;
-            content = `${matches[1]}${matches[2]} ${matches[3]} ${
-                matches[4] ? matches[4] : ""
-            };${
-                matches[5]
-            }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(${
-                level || 0
-            }, ${matches[3]}); ${finishAppend}end\n${matches[6]}${matches[7]}`;
+            content = `${matches[1]}${matches[2]} ${matches[3]} ${matches[4] ? matches[4] : ""
+                };${matches[5]
+                }\ninitial begin $dumpfile(\"${dumpName}\"); $dumpvars(${level || 0
+                }, ${matches[3]}); ${finishAppend}end\n${matches[6]}${matches[7]}`;
             const testbenchPath = path.join(
                 parentPaths[testbenchEntry.parent],
                 testbenchEntry.title
@@ -1727,8 +1705,8 @@ const writeIPCoreFiles = function (
                                                                 filePaths.verilog.push(
                                                                     path.join(
                                                                         relativeParentPaths[
-                                                                            ipEntry
-                                                                                ._id
+                                                                        ipEntry
+                                                                            ._id
                                                                         ],
                                                                         filePath
                                                                     )
@@ -1738,7 +1716,7 @@ const writeIPCoreFiles = function (
                                                                 const fileId =
                                                                     ipNamesMap
                                                                         .files[
-                                                                        fileName
+                                                                    fileName
                                                                     ];
                                                                 if (
                                                                     namesMap.ips ==
@@ -1750,7 +1728,7 @@ const writeIPCoreFiles = function (
                                                                 if (
                                                                     namesMap
                                                                         .ips[
-                                                                        depth
+                                                                    depth
                                                                     ] == null
                                                                 ) {
                                                                     namesMap.ips[
@@ -1760,10 +1738,10 @@ const writeIPCoreFiles = function (
                                                                 if (
                                                                     namesMap
                                                                         .ips[
-                                                                        depth
+                                                                    depth
                                                                     ][
-                                                                        ipEntry
-                                                                            .title
+                                                                    ipEntry
+                                                                        .title
                                                                     ] == null
                                                                 ) {
                                                                     namesMap.ips[
@@ -2438,7 +2416,7 @@ const writeCompilationContainerFiles = (
                                     EntryType.StartupScript,
                                 ].includes(entry.handler) &&
                                 ((needle = entry._id.toString()),
-                                ![linkerFile, startupFile].includes(needle))
+                                    ![linkerFile, startupFile].includes(needle))
                             ) {
                                 return callback();
                             }
@@ -2569,8 +2547,8 @@ const writeCompilationContainerFiles = (
                                                                             const relativePath =
                                                                                 path.join(
                                                                                     relativePaths[
-                                                                                        entry
-                                                                                            .parent
+                                                                                    entry
+                                                                                        .parent
                                                                                     ],
                                                                                     entry.title
                                                                                 );
@@ -2582,7 +2560,7 @@ const writeCompilationContainerFiles = (
                                                                                     relativePath.indexOf(
                                                                                         "/"
                                                                                     ) +
-                                                                                        1
+                                                                                    1
                                                                                 )
                                                                             ] =
                                                                                 entry._id;
