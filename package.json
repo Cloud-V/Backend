@@ -18,6 +18,7 @@
         "lint": "node ./node_modules/prettier/bin-prettier.js --check ."
     },
     "dependencies": {
+        "@google-cloud/storage": "^6.5.0",
         "adm-zip": "^0.4.11",
         "async": "^3.2.0",
         "aws-sdk": "^2.807.0",
