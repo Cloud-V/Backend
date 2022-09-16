@@ -214,8 +214,8 @@ let defaultPort =
     servedComponent === "api"
         ? 3000
         : servedComponent === "processing"
-        ? 4040
-        : 9999;
+            ? 4040
+            : 9999;
 let port = normalizePort(process.env.PORT || defaultPort);
 
 let webhook = process.env.CLOUDV_WEBHOOK || `http://localhost:${port}/webhook`;
@@ -248,6 +248,9 @@ let proc = {
 //File manager
 let repoFilesPath = process.env.REPO_FILES_PATH || "repo_files";
 
+//Google Cloud Bucket
+let googleCloudBucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME || 'testing-bucket-3';
+
 module.exports = {
     stdcellRepo,
     loggingLevel,
@@ -278,4 +281,5 @@ module.exports = {
     frontend,
     proc,
     repoFilesPath,
+    googleCloudBucketName
 };
