@@ -2,8 +2,8 @@ const googleCloudStorageManager = require("../modules/google-cloud/storage-manag
 
 const main = async () => {
     try {
-        let content = 'hello world 3';
-        let filename = 'omar1.txt';
+        let content = 'hello world';
+        let filename = 'test.txt';
 
         //Checking file existance
         console.log(`Checking file existence for file: ${filename}`)
