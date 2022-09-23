@@ -476,7 +476,8 @@ const getFileStream = (repoEntry, cb) => {
                 });
             } else {
                 try {
-                    let stream = fs.createReadStream(fileEntry.fileName);
+                    let stream = googleCloudStorageManager.createReadStream(fileEntry.fileName);
+
                     return cb(null, stream);
                 } catch (error) {
                     return cb(error);
