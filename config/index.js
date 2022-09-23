@@ -249,7 +249,7 @@ let proc = {
 let repoFilesPath = process.env.REPO_FILES_PATH || "repo_files";
 
 //Google Cloud Bucket
-let googleCloudBucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME || 'testing-bucket-3';
+let googleCloudBucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME || 'cloudv-storage';
 
 module.exports = {
     stdcellRepo,
