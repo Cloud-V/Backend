@@ -28,7 +28,6 @@ const exists = async (filename) => {
     return res[0]
 }
 const createReadStream = (filename) => { //TODO: Remove this function
-    console.log("FileName: ", filename)
     let file = storage.bucket(bucketName).file(filename)
     return file.createReadStream();
 }
