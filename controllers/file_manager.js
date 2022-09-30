@@ -57,38 +57,7 @@ const createFile = async (repoEntry, fileData, content = "", cb) => {
 
 // Buffer takes precedence over path.
 const createMediaFile = async ({ path, buffer }, metadata, cb) => {
-    const fileModel = require("../models/media_file").model;
-    return new Promise(async (resolve, reject) => {
-        let filePath = path;
-        if (buffer) {
-            filePath = tmp.tmpNameSync();
-            await googleCloudStorageManager.upload(filePath, buffer);
-        }
-        const fsName =
-            shortid.generate() +
-            "_" +
-            Date.now() +
-            "." +
-            fileData.extension;
-
-        let newFileEntry = new fileModel({
-            user: metadata.user,
-            baseName: metadata.originalname,
-            mimeType: metadata.mimetype,
-            encoding: metadata.encoding,
-            extension: metadata.extension,
-            fileName: fsName,
-        });
-        try {
-            await googleCloudStorageManager.upload(fsName, content);
-            newFileEntry = await newFileEntry.save();
-            return resolve(newFileEntry);
-        } catch (error) {
-            return reject(error);
-        }
-    })
-        .then(wrapResolveCallback(cb))
-        .catch(cb);
+    return new Promise.resolve();
 };
 
 const duplicateFile = async (copiedItem, oldItem, cb) => {
