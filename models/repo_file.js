@@ -59,5 +59,5 @@ repoFileSchema.method.getFullPath = function () {
 };
 
 module.exports = {
-    model: mongoose.model("RepoFile", repoFileSchema),
+    model: mongoose.model("RepoFile", repoFileSchema, "repofiles_2"),
 };
