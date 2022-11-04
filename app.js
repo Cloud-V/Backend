@@ -8,8 +8,7 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const passport = require("passport");
-const cors = require("cors");
+const passport = require("passport")
 const rmdir = require("rimraf");
 const Grid = require("gridfs-stream");
 const compression = require("compression");
@@ -186,11 +185,6 @@ if (servedComponent === "api") {
     if (config.consolidatedProcessing) {
         app.use("/processing", processing.routes);
     }
-
-    const corsOptions = {
-        exposedHeaders: "Content-Disposition",
-    };
-    app.use(cors(corsOptions));
 
     app.use(passport.initialize());
     app.use(passport.session());
