@@ -1,4 +1,5 @@
 const urlj = require("url-join");
+const path = require("path");
 
 let loggingLevel = process.env.CLOUDV_LOGGING_LEVEL || "silly";
 
@@ -147,7 +148,7 @@ let docker = {
 };
 
 // STDCELL Repo Path
-let stdcellRepo = process.env.STDCELL_REPO_PATH || "/Stdcells";
+let stdcellRepo = path.resolve(process.env.STDCELL_REPO_PATH || "/Stdcells");
 
 // Commands and Lambda App Paths
 let yosysCommand = process.env.YOSYS_COMMAND || "yosys";
@@ -223,7 +224,7 @@ let webhook = process.env.CLOUDV_WEBHOOK || `http://localhost:${port}/webhook`;
 let frontend = {
     host: process.env.CLOUDV_FRONTEND_URL || "localhost:3001",
 };
-
+let timeout = process.env.CLOUDV_JOB_TIMEOUT || 10000;
 let procProtocol = process.env.CLOUDV_PROCESSOR_PROTOCOL || `http`;
 let procPort = consolidatedProcessing
     ? port
@@ -274,4 +275,5 @@ module.exports = {
     port,
     frontend,
     proc,
+    timeout,
 };

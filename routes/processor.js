@@ -1,5 +1,5 @@
 const Repo = require("../controllers/repo");
-const Simulator = require("../modules/simulator");
+const VCD = require("../modules/vcd");
 const LambdaManager = require("../modules/lambda_manager");
 const requestTimeout = require("../config").docker.timeout * 1000;
 
@@ -72,7 +72,7 @@ router.post("/simulate-testbench", async (req, res, next) => {
                 log: simulationLog,
             });
         } else {
-            const wave = await Simulator.generateWave(vcd);
+            const wave = await VCD.toJSON(vcd);
             return res.status(200).json({
                 errors: simulationErrors,
                 warnings: simulationWarnings,
@@ -98,7 +98,7 @@ router.post("/simulate-netlist", async (req, res, next) => {
                 log: simulationLog,
             });
         } else {
-            const wave = await Simulator.generateWave(vcd);
+            const wave = await VCD.toJSON(vcd);
             return res.status(200).json({
                 errors: simulationErrors,
                 warnings: simulationWarnings,

@@ -13,31 +13,29 @@ const invokeLambda = async (functionName, body) => {
         })
     };
     return await new Promise(async (resolve, reject) => {
-        lambda.invoke(params, function(err, data) {
+        lambda.invoke(params, function (err, data) {
             if (err) {
                 console.error(err);
                 return reject(err);
             }
 
-            console.log(data);
-
             if (!data.Payload) {
                 console.error(data);
                 console.error(new Error("Payload is empty."));
-                return reject({error: "An internal error has occurred while executing your asynchronous job. Please contact support."});
+                return reject({ error: "An internal error has occurred while executing your asynchronous job. Please contact support." });
             }
             const parsed = JSON.parse(data.Payload);
 
             if ((parsed ?? "") === "") {
                 console.error(data);
                 console.error(new Error(`Parsed payload is empty.`));
-                return reject({error: "An internal error has occurred while executing your asynchronous job. Please contact support."});
+                return reject({ error: "An internal error has occurred while executing your asynchronous job. Please contact support." });
             }
 
             if ((parsed.body ?? "") === "") {
                 console.error(data);
                 console.error(new Error("Parsed payload lacks a body."));
-                return reject({error: "An internal error has occurred while executing your asynchronous job. Please contact support."});
+                return reject({ error: "An internal error has occurred while executing your asynchronous job. Please contact support." });
             }
 
             let body = JSON.parse(parsed.body);
@@ -66,7 +64,7 @@ async function executeLambda(endpoint, body) {
     body.subfunction = endpoint;
 
     let result = await invokeLambda(config.lambda.name, body);
-    
+
     if (result.error) {
         throw result;
     }
