@@ -12,10 +12,10 @@ const repoAccessModel = require("../../models/repo_access");
 const repoEntryModel = require("../../models/repo_entry");
 
 const Synthesizer = require("../../modules/synthesizer");
-const Simulator = require("../../modules/simulator");
 const FSMCompiler = require("../../modules/fsm_compiler");
 const Mailer = require("../../modules/mailer");
 const Boards = require("../../modules/boards");
+const VCD = require("../../modules/vcd");
 
 const _ = require("underscore");
 const multer = require("multer");
@@ -1327,7 +1327,7 @@ router.get("/get/:fileid", restrict, function (req, res, next) {
                                         if (err) {
                                             return res.status(500).json(err);
                                         } else {
-                                            return Simulator.generateWave(
+                                            return VCD.toJSON(
                                                 content,
                                                 function (err, wave) {
                                                     if (err) {
@@ -3496,354 +3496,224 @@ router.post("/ajax", restrict, async function (req, res, next) {
                 });
             }
             let simulateTestbenchUrl;
-            const simulationCB = (tempPath, files, reverseMap, dumpName) =>
-                Simulator.simulate(
-                    tempPath,
-                    files[item].tempName,
-                    reverseMap,
-                    dumpName,
-                    function (
-                        err,
-                        simulationErrors,
-                        simulationWarnings,
-                        simulationLog,
-                        vcd
-                    ) {
-                        rmdir(tempPath, function (err) {
-                            if (err) {
-                                return console.error(err);
-                            }
-                        });
-                        if (err) {
-                            return res.status(500).json(err);
-                        } else {
-                            if (vcd == null || vcd.trim() === "") {
-                                return res.json({
-                                    errors: simulationErrors,
-                                    warnings: simulationWarnings,
-                                    log: simulationLog,
-                                });
-                            } else {
-                                return Simulator.generateWave(
-                                    vcd,
-                                    function (err, wave) {
-                                        if (err) {
-                                            return res.status(500).json(err);
-                                        } else {
-                                            return repo.createVCD(
-                                                req.user,
-                                                item,
-                                                isNetlist,
-                                                netlistId,
-                                                stdcell,
-                                                vcdName,
-                                                vcd,
-                                                `VCD created on ${new Date()}`,
-                                                overwrite,
-                                                function (err, result) {
-                                                    if (err) {
-                                                        return res
-                                                            .status(500)
-                                                            .json(err);
-                                                    } else {
-                                                        const {
-                                                            entry: vcdEntry,
-                                                        } = result;
-                                                        if (
-                                                            simulationLog.length
-                                                        ) {
-                                                            if (
-                                                                /^\s*VCD info\:\s*dumpfile/i.test(
-                                                                    simulationLog[
-                                                                        simulationLog.length -
-                                                                            1
-                                                                    ]
-                                                                )
-                                                            ) {
-                                                                simulationLog.pop();
-                                                            }
-                                                        }
-                                                        const response = {
-                                                            errors: simulationErrors,
-                                                            warnings:
-                                                                simulationWarnings,
-                                                            log: simulationLog,
-                                                            fileId: vcdEntry._id,
-                                                            fileName:
-                                                                vcdEntry.title,
-                                                            fileType: "vcd",
-                                                            parentId:
-                                                                vcdEntry.parent,
-                                                        };
-
-                                                        return res
-                                                            .status(200)
-                                                            .json(response);
-                                                    }
-                                                }
-                                            );
-                                        }
-                                    }
-                                );
-                            }
-                        }
-                    }
-                );
 
             if (!isNetlist) {
-                if (process.env.CLOUDV_DISABLE_DOCKER !== "1") {
-                    simulateTestbenchUrl =
-                        proc.url + proc.simulateTestbenchPath;
-                    console.error(simulateTestbenchUrl);
-                    requestBody = _.clone(req.body);
-                    delete requestBody.user;
-                    requestBody.username = ownerName;
-                    requestBody.reponame = repoName;
-                    res.socket.setTimeout(requestTimeout);
-                    let { err, httpResponse, body } = await new Promise(
-                        (resolve) =>
-                            request.post(
+                simulateTestbenchUrl = proc.url + proc.simulateTestbenchPath;
+                requestBody = _.clone(req.body);
+                delete requestBody.user;
+                requestBody.username = ownerName;
+                requestBody.reponame = repoName;
+                res.socket.setTimeout(requestTimeout);
+                let { err, httpResponse, body } = await new Promise((resolve) =>
+                    request.post(
+                        {
+                            url: simulateTestbenchUrl,
+                            json: requestBody,
+                            timeout: requestTimeout,
+                        },
+                        function (err, httpResponse, body) {
+                            return resolve({ err, httpResponse, body });
+                        }
+                    )
+                );
+                if (err) {
+                    console.error(`${err}`.slice(0, 500));
+                    if (
+                        ["ETIMEDOUT", "ESOCKETTIMEDOUT", "ECONNRESET"].includes(
+                            err.code
+                        )
+                    ) {
+                        throw { error: "Job timed out." };
+                    }
+                    throw { error: "Failed to submit the job." };
+                }
+                if (httpResponse.statusCode !== 200) {
+                    if (body != null && body.error !== null) {
+                        throw { error: body.error };
+                    } else {
+                        throw { error: "An unknown error has occurred." };
+                    }
+                }
+                const { vcd } = body;
+                const simulationErrors = (body.errors || []).concat(
+                    body.simulationErrors || []
+                );
+                const simulationWarnings = (body.warnings || []).concat(
+                    body.simulationWarnings || []
+                );
+                const simulationLog = (body.log || []).concat(
+                    body.simulationLog || []
+                );
+                if (vcd == null || vcd.trim() === "") {
+                    console.error("EMPTY VCD: ", body);
+
+                    if (!simulationErrors.length) {
+                        simulationErrors.push({
+                            message:
+                                "An unexpected error occurred while simulating.",
+                        });
+                    }
+
+                    return res.status(500).json({
+                        errors: simulationErrors,
+                        warnings: simulationWarnings,
+                        log: simulationLog,
+                    });
+                }
+                const { wave } = body;
+                if (simulationErrors.length) {
+                    return res.status(200).json({
+                        errors: simulationErrors,
+                        warnings: simulationWarnings,
+                        log: simulationLog,
+                    });
+                }
+
+                let result = await repo.p.createVCD(
+                    req.user,
+                    item,
+                    isNetlist,
+                    netlistId,
+                    stdcell,
+                    vcdName,
+                    vcd,
+                    `VCD created on ${new Date()}`,
+                    overwrite
+                );
+
+                const { entry: vcdEntry } = result;
+                if (simulationLog.length) {
+                    if (
+                        /^\s*VCD info\:\s*dumpfile/i.test(
+                            simulationLog[simulationLog.length - 1]
+                        )
+                    ) {
+                        simulationLog.pop();
+                    }
+                }
+                const response = {
+                    errors: simulationErrors,
+                    warnings: simulationWarnings,
+                    log: simulationLog,
+                    fileId: vcdEntry._id,
+                    fileName: vcdEntry.title,
+                    fileType: "vcd",
+                    parentId: vcdEntry.parent,
+                };
+                if (
+                    typeof vcdEntry.attributes === "string" &&
+                    vcdEntry.attributes.length
+                ) {
+                    try {
+                        const currentAttributes = JSON.parse(
+                            vcdEntry.attributes
+                        );
+                        let renderedSignals = currentAttributes.rendered || [];
+                        let hiddentSignals = currentAttributes.hidden || [];
+                        const allSignals = _.pluck(wave.signal, "name");
+                        const newSignals = _.difference(
+                            allSignals,
+                            renderedSignals.concat(hiddentSignals)
+                        );
+                        renderedSignals = renderedSignals.concat(newSignals);
+                        renderedSignals = _.intersection(
+                            renderedSignals,
+                            allSignals
+                        );
+                        hiddentSignals = _.difference(
+                            allSignals,
+                            renderedSignals
+                        );
+                        currentAttributes.rendered = renderedSignals;
+                        currentAttributes.hidden = hiddentSignals;
+                        await repo.p.updateEntryAttributes(
+                            vcdEntry._id,
+                            JSON.stringify(currentAttributes)
+                        );
+                        response.timing = vcdEntry.attributes;
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+
+                return res.status(200).json(response);
+            } else {
+                return repo.getEntry(
+                    {
+                        _id: netlistId,
+                        handler: EntryType.NetlistFile,
+                    },
+                    function (err, netlist) {
+                        if (err) {
+                            return cb(err);
+                        } else if (!netlist) {
+                            return cb({
+                                error: "Nelist not found.",
+                            });
+                        } else {
+                            simulateTestbenchUrl =
+                                proc.url + proc.simulateNetlistPath;
+                            requestBody = _.clone(req.body);
+                            delete requestBody.user;
+                            requestBody.username = ownerName;
+                            requestBody.reponame = repoName;
+                            res.socket.setTimeout(requestTimeout);
+                            return request.post(
                                 {
                                     url: simulateTestbenchUrl,
                                     json: requestBody,
                                     timeout: requestTimeout,
                                 },
                                 function (err, httpResponse, body) {
-                                    return resolve({ err, httpResponse, body });
-                                }
-                            )
-                    );
-                    if (err) {
-                        console.error(`${err}`.slice(0, 500));
-                        if (
-                            [
-                                "ETIMEDOUT",
-                                "ESOCKETTIMEDOUT",
-                                "ECONNRESET",
-                            ].includes(err.code)
-                        ) {
-                            throw { error: "Job timed out." };
-                        }
-                        throw { error: "Failed to submit the job." };
-                    }
-                    if (httpResponse.statusCode !== 200) {
-                        if (body != null && body.error !== null) {
-                            throw { error: body.error };
-                        } else {
-                            throw { error: "An unknown error has occurred." };
-                        }
-                    }
-                    const { vcd } = body;
-                    const simulationErrors = (body.errors || []).concat(
-                        body.simulationErrors || []
-                    );
-                    const simulationWarnings = (body.warnings || []).concat(
-                        body.simulationWarnings || []
-                    );
-                    const simulationLog = (body.log || []).concat(
-                        body.simulationLog || []
-                    );
-                    if (vcd == null || vcd.trim() === "") {
-                        console.error("EMPTY VCD: ", body);
-
-                        if (!simulationErrors.length) {
-                            simulationErrors.push({
-                                message:
-                                    "An unexpected error occurred while simulating.",
-                            });
-                        }
-
-                        return res.status(500).json({
-                            errors: simulationErrors,
-                            warnings: simulationWarnings,
-                            log: simulationLog,
-                        });
-                    }
-                    const { wave } = body;
-                    if (simulationErrors.length) {
-                        return res.status(200).json({
-                            errors: simulationErrors,
-                            warnings: simulationWarnings,
-                            log: simulationLog,
-                        });
-                    }
-
-                    let result = await repo.p.createVCD(
-                        req.user,
-                        item,
-                        isNetlist,
-                        netlistId,
-                        stdcell,
-                        vcdName,
-                        vcd,
-                        `VCD created on ${new Date()}`,
-                        overwrite
-                    );
-
-                    const { entry: vcdEntry } = result;
-                    if (simulationLog.length) {
-                        if (
-                            /^\s*VCD info\:\s*dumpfile/i.test(
-                                simulationLog[simulationLog.length - 1]
-                            )
-                        ) {
-                            simulationLog.pop();
-                        }
-                    }
-                    const response = {
-                        errors: simulationErrors,
-                        warnings: simulationWarnings,
-                        log: simulationLog,
-                        fileId: vcdEntry._id,
-                        fileName: vcdEntry.title,
-                        fileType: "vcd",
-                        parentId: vcdEntry.parent,
-                    };
-                    if (
-                        typeof vcdEntry.attributes === "string" &&
-                        vcdEntry.attributes.length
-                    ) {
-                        try {
-                            const currentAttributes = JSON.parse(
-                                vcdEntry.attributes
-                            );
-                            let renderedSignals =
-                                currentAttributes.rendered || [];
-                            let hiddentSignals = currentAttributes.hidden || [];
-                            const allSignals = _.pluck(wave.signal, "name");
-                            const newSignals = _.difference(
-                                allSignals,
-                                renderedSignals.concat(hiddentSignals)
-                            );
-                            renderedSignals =
-                                renderedSignals.concat(newSignals);
-                            renderedSignals = _.intersection(
-                                renderedSignals,
-                                allSignals
-                            );
-                            hiddentSignals = _.difference(
-                                allSignals,
-                                renderedSignals
-                            );
-                            currentAttributes.rendered = renderedSignals;
-                            currentAttributes.hidden = hiddentSignals;
-                            await repo.p.updateEntryAttributes(
-                                vcdEntry._id,
-                                JSON.stringify(currentAttributes)
-                            );
-                            response.timing = vcdEntry.attributes;
-                        } catch (e) {
-                            console.error(e);
-                        }
-                    }
-
-                    return res.status(200).json(response);
-                } else {
-                    return FileManager.writeTempSimulationModules(
-                        repo,
-                        item,
-                        simulationTime,
-                        "temp/",
-                        0,
-                        function (err, tempPath, files, reverseMap, dumpName) {
-                            if (err) {
-                                if (tempPath != null) {
-                                    rmdir(tempPath, function (err) {
-                                        if (err) {
-                                            return console.error(err);
-                                        }
-                                    });
-                                }
-                                return res.status(500).json(err);
-                            } else {
-                                return simulationCB(
-                                    tempPath,
-                                    files,
-                                    reverseMap,
-                                    dumpName
-                                );
-                            }
-                        }
-                    );
-                }
-            } else {
-                if (process.env.CLOUDV_DISABLE_DOCKER !== "1") {
-                    return repo.getEntry(
-                        {
-                            _id: netlistId,
-                            handler: EntryType.NetlistFile,
-                        },
-                        function (err, netlist) {
-                            if (err) {
-                                return cb(err);
-                            } else if (!netlist) {
-                                return cb({
-                                    error: "Nelist not found.",
-                                });
-                            } else {
-                                simulateTestbenchUrl =
-                                    proc.url + proc.simulateNetlistPath;
-                                requestBody = _.clone(req.body);
-                                delete requestBody.user;
-                                requestBody.username = ownerName;
-                                requestBody.reponame = repoName;
-                                res.socket.setTimeout(requestTimeout);
-                                return request.post(
-                                    {
-                                        url: simulateTestbenchUrl,
-                                        json: requestBody,
-                                        timeout: requestTimeout,
-                                    },
-                                    function (err, httpResponse, body) {
-                                        if (err) {
-                                            console.error(err);
-                                            if (
-                                                err.code === "ETIMEDOUT" ||
-                                                err.code ===
-                                                    "ESOCKETTIMEDOUT" ||
-                                                err.code === "ECONNRESET"
-                                            ) {
-                                                return res.status(500).json({
-                                                    error: "Job timed out.",
-                                                });
-                                            }
-                                            return res.status(500).json({
-                                                error: "Failed to submit the job.",
-                                            });
-                                        } else if (
-                                            httpResponse.statusCode !== 200
+                                    if (err) {
+                                        console.error(err);
+                                        if (
+                                            err.code === "ETIMEDOUT" ||
+                                            err.code === "ESOCKETTIMEDOUT" ||
+                                            err.code === "ECONNRESET"
                                         ) {
-                                            if (
-                                                body != null &&
-                                                body.error != null
-                                            ) {
-                                                return res.status(500).json({
-                                                    error: body.error,
-                                                });
-                                            } else {
-                                                return res.status(500).json({
-                                                    error: "An unexpected error has occurred.",
-                                                });
-                                            }
+                                            return res.status(500).json({
+                                                error: "Job timed out.",
+                                            });
+                                        }
+                                        return res.status(500).json({
+                                            error: "Failed to submit the job.",
+                                        });
+                                    } else if (
+                                        httpResponse.statusCode !== 200
+                                    ) {
+                                        if (
+                                            body != null &&
+                                            body.error != null
+                                        ) {
+                                            return res.status(500).json({
+                                                error: body.error,
+                                            });
                                         } else {
-                                            const { vcd } = body;
-                                            const simulationErrors = (
-                                                body.errors || []
-                                            ).concat(
-                                                body.simulationErrors || []
-                                            );
-                                            const simulationWarnings = (
-                                                body.warnings || []
-                                            ).concat(
-                                                body.simulationWarnings || []
-                                            );
-                                            const simulationLog = (
-                                                body.log || []
-                                            ).concat(body.simulationLog || []);
-                                            if (
-                                                vcd == null ||
-                                                vcd.trim() === ""
-                                            ) {
+                                            return res.status(500).json({
+                                                error: "An unexpected error has occurred.",
+                                            });
+                                        }
+                                    } else {
+                                        const { vcd } = body;
+                                        const simulationErrors = (
+                                            body.errors || []
+                                        ).concat(body.simulationErrors || []);
+                                        const simulationWarnings = (
+                                            body.warnings || []
+                                        ).concat(body.simulationWarnings || []);
+                                        const simulationLog = (
+                                            body.log || []
+                                        ).concat(body.simulationLog || []);
+                                        if (vcd == null || vcd.trim() === "") {
+                                            return res.status(200).json({
+                                                errors: simulationErrors,
+                                                warnings: simulationWarnings,
+                                                log: simulationLog,
+                                            });
+                                        } else {
+                                            const { wave } = body;
+                                            if (simulationErrors.length) {
                                                 return res.status(200).json({
                                                     errors: simulationErrors,
                                                     warnings:
@@ -3851,157 +3721,135 @@ router.post("/ajax", restrict, async function (req, res, next) {
                                                     log: simulationLog,
                                                 });
                                             } else {
-                                                const { wave } = body;
-                                                if (simulationErrors.length) {
-                                                    return res
-                                                        .status(200)
-                                                        .json({
-                                                            errors: simulationErrors,
-                                                            warnings:
-                                                                simulationWarnings,
-                                                            log: simulationLog,
-                                                        });
-                                                } else {
-                                                    return repo.createVCD(
-                                                        req.user,
-                                                        item,
-                                                        isNetlist,
-                                                        netlistId,
-                                                        stdcell,
-                                                        vcdName,
-                                                        vcd,
-                                                        `VCD created on ${new Date()}`,
-                                                        overwrite,
-                                                        function (err, result) {
-                                                            if (err) {
-                                                                return res
-                                                                    .status(500)
-                                                                    .json(err);
-                                                            } else {
-                                                                const {
-                                                                    entry: vcdEntry,
-                                                                } = result;
+                                                return repo.createVCD(
+                                                    req.user,
+                                                    item,
+                                                    isNetlist,
+                                                    netlistId,
+                                                    stdcell,
+                                                    vcdName,
+                                                    vcd,
+                                                    `VCD created on ${new Date()}`,
+                                                    overwrite,
+                                                    function (err, result) {
+                                                        if (err) {
+                                                            return res
+                                                                .status(500)
+                                                                .json(err);
+                                                        } else {
+                                                            const {
+                                                                entry: vcdEntry,
+                                                            } = result;
+                                                            if (
+                                                                simulationLog.length
+                                                            ) {
                                                                 if (
-                                                                    simulationLog.length
+                                                                    /^\s*VCD info\:\s*dumpfile/i.test(
+                                                                        simulationLog[
+                                                                            simulationLog.length -
+                                                                                1
+                                                                        ]
+                                                                    )
                                                                 ) {
-                                                                    if (
-                                                                        /^\s*VCD info\:\s*dumpfile/i.test(
-                                                                            simulationLog[
-                                                                                simulationLog.length -
-                                                                                    1
-                                                                            ]
-                                                                        )
-                                                                    ) {
-                                                                        simulationLog.pop();
-                                                                    }
+                                                                    simulationLog.pop();
                                                                 }
-                                                                const response =
-                                                                    {
-                                                                        errors: simulationErrors,
-                                                                        warnings:
-                                                                            simulationWarnings,
-                                                                        log: simulationLog,
-                                                                        fileId: vcdEntry._id,
-                                                                        fileName:
-                                                                            vcdEntry.title,
-                                                                        fileType:
-                                                                            "vcd",
-                                                                        parentId:
-                                                                            vcdEntry.parent,
-                                                                    };
-                                                                if (
-                                                                    vcdEntry.attributes !=
-                                                                        null &&
-                                                                    vcdEntry
-                                                                        .attributes
-                                                                        .length
-                                                                ) {
-                                                                    try {
-                                                                        const currentAttributes =
-                                                                            JSON.parse(
-                                                                                vcdEntry.attributes
-                                                                            );
-                                                                        let renderedSignals =
-                                                                            currentAttributes.rendered ||
-                                                                            [];
-                                                                        let hiddentSignals =
-                                                                            currentAttributes.hidden ||
-                                                                            [];
-                                                                        const allSignals =
-                                                                            _.pluck(
-                                                                                wave.signal,
-                                                                                "name"
-                                                                            );
-                                                                        const newSignals =
-                                                                            _.difference(
-                                                                                allSignals,
-                                                                                renderedSignals.concat(
-                                                                                    hiddentSignals
-                                                                                )
-                                                                            );
-                                                                        renderedSignals =
+                                                            }
+                                                            const response = {
+                                                                errors: simulationErrors,
+                                                                warnings:
+                                                                    simulationWarnings,
+                                                                log: simulationLog,
+                                                                fileId: vcdEntry._id,
+                                                                fileName:
+                                                                    vcdEntry.title,
+                                                                fileType: "vcd",
+                                                                parentId:
+                                                                    vcdEntry.parent,
+                                                            };
+                                                            if (
+                                                                vcdEntry.attributes !=
+                                                                    null &&
+                                                                vcdEntry
+                                                                    .attributes
+                                                                    .length
+                                                            ) {
+                                                                try {
+                                                                    const currentAttributes =
+                                                                        JSON.parse(
+                                                                            vcdEntry.attributes
+                                                                        );
+                                                                    let renderedSignals =
+                                                                        currentAttributes.rendered ||
+                                                                        [];
+                                                                    let hiddentSignals =
+                                                                        currentAttributes.hidden ||
+                                                                        [];
+                                                                    const allSignals =
+                                                                        _.pluck(
+                                                                            wave.signal,
+                                                                            "name"
+                                                                        );
+                                                                    const newSignals =
+                                                                        _.difference(
+                                                                            allSignals,
                                                                             renderedSignals.concat(
-                                                                                newSignals
-                                                                            );
-                                                                        renderedSignals =
-                                                                            _.intersection(
-                                                                                renderedSignals,
-                                                                                allSignals
-                                                                            );
-                                                                        hiddentSignals =
-                                                                            _.difference(
-                                                                                allSignals,
-                                                                                renderedSignals
-                                                                            );
-                                                                        currentAttributes.rendered =
-                                                                            renderedSignals;
-                                                                        currentAttributes.hidden =
-                                                                            hiddentSignals;
-                                                                        return repo.updateEntryAttributes(
-                                                                            vcdEntry._id,
-                                                                            JSON.stringify(
-                                                                                currentAttributes
-                                                                            ),
-                                                                            function (
-                                                                                err,
-                                                                                updatedEntry
-                                                                            ) {
-                                                                                if (
-                                                                                    err
-                                                                                ) {
-                                                                                    return res
-                                                                                        .status(
-                                                                                            500
-                                                                                        )
-                                                                                        .json(
-                                                                                            err
-                                                                                        );
-                                                                                } else {
-                                                                                    response.timing =
-                                                                                        vcdEntry.attributes;
-                                                                                    return res
-                                                                                        .status(
-                                                                                            200
-                                                                                        )
-                                                                                        .json(
-                                                                                            response
-                                                                                        );
-                                                                                }
-                                                                            }
-                                                                        );
-                                                                    } catch (e) {
-                                                                        console.error(
-                                                                            e
-                                                                        );
-                                                                        return res
-                                                                            .status(
-                                                                                200
+                                                                                hiddentSignals
                                                                             )
-                                                                            .json(
-                                                                                response
-                                                                            );
-                                                                    }
-                                                                } else {
+                                                                        );
+                                                                    renderedSignals =
+                                                                        renderedSignals.concat(
+                                                                            newSignals
+                                                                        );
+                                                                    renderedSignals =
+                                                                        _.intersection(
+                                                                            renderedSignals,
+                                                                            allSignals
+                                                                        );
+                                                                    hiddentSignals =
+                                                                        _.difference(
+                                                                            allSignals,
+                                                                            renderedSignals
+                                                                        );
+                                                                    currentAttributes.rendered =
+                                                                        renderedSignals;
+                                                                    currentAttributes.hidden =
+                                                                        hiddentSignals;
+                                                                    return repo.updateEntryAttributes(
+                                                                        vcdEntry._id,
+                                                                        JSON.stringify(
+                                                                            currentAttributes
+                                                                        ),
+                                                                        function (
+                                                                            err,
+                                                                            updatedEntry
+                                                                        ) {
+                                                                            if (
+                                                                                err
+                                                                            ) {
+                                                                                return res
+                                                                                    .status(
+                                                                                        500
+                                                                                    )
+                                                                                    .json(
+                                                                                        err
+                                                                                    );
+                                                                            } else {
+                                                                                response.timing =
+                                                                                    vcdEntry.attributes;
+                                                                                return res
+                                                                                    .status(
+                                                                                        200
+                                                                                    )
+                                                                                    .json(
+                                                                                        response
+                                                                                    );
+                                                                            }
+                                                                        }
+                                                                    );
+                                                                } catch (e) {
+                                                                    console.error(
+                                                                        e
+                                                                    );
                                                                     return res
                                                                         .status(
                                                                             200
@@ -4010,45 +3858,24 @@ router.post("/ajax", restrict, async function (req, res, next) {
                                                                             response
                                                                         );
                                                                 }
+                                                            } else {
+                                                                return res
+                                                                    .status(200)
+                                                                    .json(
+                                                                        response
+                                                                    );
                                                             }
                                                         }
-                                                    );
-                                                }
+                                                    }
+                                                );
                                             }
                                         }
                                     }
-                                );
-                            }
-                        }
-                    );
-                } else {
-                    return FileManager.writeNetlistSimulationModules(
-                        repo,
-                        item,
-                        netlistId,
-                        stdcell,
-                        simulationTime,
-                        function (err, tempPath, files, reverseMap, dumpName) {
-                            if (err) {
-                                if (tempPath != null) {
-                                    rmdir(tempPath, function (err) {
-                                        if (err) {
-                                            return console.error(err);
-                                        }
-                                    });
                                 }
-                                return res.status(500).json(err);
-                            } else {
-                                return simulationCB(
-                                    tempPath,
-                                    files,
-                                    reverseMap,
-                                    dumpName
-                                );
-                            }
+                            );
                         }
-                    );
-                }
+                    }
+                );
             }
         } else if (action === "sta") {
             let e;

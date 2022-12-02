@@ -25,7 +25,6 @@ if (!["api", "processing"].includes(servedComponent)) {
 }
 
 if (servedComponent === "api") {
-    global.Promise = require("bluebird");
     require("dotenv").config();
     passportConfig();
 }
@@ -214,7 +213,6 @@ if (servedComponent === "api") {
     );
 }
 if (servedComponent === "processing") {
-    app.use("/llambda", processing.localLambda);
     app.use("/", processing.routes);
 }
 

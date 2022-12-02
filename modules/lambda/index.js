@@ -1,8 +1,6 @@
 const list = require("./list");
 
 exports.handler = (event, context, callback) => {
-    console.log(event, context, callback);
-    
     let body = event.body || {};
 
     if (typeof body === 'string') {
@@ -34,8 +32,8 @@ exports.handler = (event, context, callback) => {
             body: JSON.stringify({
                 error: `Unknown subfunction ${subfunction}.`
             })
-        });        
-    }    
+        });
+    }
 
     let subfunctionHandler = require(`./functions/${subfunction}/index`).handler;
 

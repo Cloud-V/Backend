@@ -1,5 +1,3 @@
-const Promise = require("bluebird");
-
 const generateJSON = (content, opts = {}, cb) => {
 	if (typeof opts === 'function') {
 		cb = opts;
@@ -40,6 +38,7 @@ const generateJSON = (content, opts = {}, cb) => {
 					state = States.Def;
 					const scopeDefMatches = /\$(\w+)\s+([\s\S]+)\s+([\s\S]+)/gm.exec(block);
 					if (!scopeDefMatches) {
+						console.error(1);
 						return reject({
 							error: 'Invalid VCD data'
 						});
@@ -77,12 +76,14 @@ const generateJSON = (content, opts = {}, cb) => {
 					}
 				}
 			} else {
+				console.error(2);
 				return reject({
 					error: 'Invalid VCD data'
 				});
 			}
 		}
 		if (!lastIndex) {
+			console.error(3);
 			return reject({
 				error: 'Invalid VCD data'
 			});
@@ -90,6 +91,7 @@ const generateJSON = (content, opts = {}, cb) => {
 		let currentTime = 0;
 		const rem = content.split(/\s*\$enddefinitions\s*/gm)[1];
 		if (!rem) {
+			console.error(4);
 			return reject({
 				error: 'Invalid VCD data'
 			});
@@ -104,14 +106,17 @@ const generateJSON = (content, opts = {}, cb) => {
 			if (timingMatches) {
 				const time = parseInt(timingMatches[1]);
 				currentTime = time;
-			} else if (block === '$dumpvars') {
+			} else if (block.startsWith('$dump')) {
 				continue;
 			} else if (block === '$end') {
+				continue;
+			} else if (block.startsWith('$comment')) {
 				continue;
 			} else {
 				if (block.startsWith('x')) {
 					const refName = block.substr(1).trim();
 					if (!signalMap[refName]) {
+						console.error(5);
 						return reject({
 							error: 'Invalid VCD data'
 						});
@@ -123,12 +128,14 @@ const generateJSON = (content, opts = {}, cb) => {
 				} else if (block.startsWith('b')) {
 					const matches = /b([01xz]+)\s+([\s\S]+)/gm.exec(block);
 					if (!matches) {
+						console.error(6);
 						return reject({
 							error: 'Invalid VCD data'
 						});
 					}
 					const refName = matches[2]
 					if (!signalMap[refName]) {
+						console.error(7);
 						return reject({
 							error: 'Invalid VCD data'
 						});
@@ -148,6 +155,7 @@ const generateJSON = (content, opts = {}, cb) => {
 				} else if (block.startsWith('z')) {
 					const refName = block.substr(1).trim();
 					if (!signalMap[refName]) {
+						console.error(8);
 						return reject({
 							error: 'Invalid VCD data'
 						});
@@ -160,6 +168,7 @@ const generateJSON = (content, opts = {}, cb) => {
 					const matches = /^([01])([\s\S]+)/gm.exec(block);
 					const refName = matches[2];
 					if (!signalMap[refName]) {
+						console.error(9);
 						return reject({
 							error: 'Invalid VCD data'
 						});
@@ -174,6 +183,7 @@ const generateJSON = (content, opts = {}, cb) => {
 					if (!matches) {
 						console.log('========');
 						console.log(block);
+						console.error(10);
 						return reject({
 							error: 'Invalid VCD data'
 						});
@@ -188,6 +198,7 @@ const generateJSON = (content, opts = {}, cb) => {
 					}
 					const refName = matches[6];
 					if (!signalMap[refName]) {
+						console.error(11);
 						return reject({
 							error: 'Invalid VCD data'
 						});
@@ -197,6 +208,8 @@ const generateJSON = (content, opts = {}, cb) => {
 						signalMap[refName].wave.push([currentTime.toString(), isNaN(value) ? 'x' : (value.toString())]);
 					}
 				} else {
+					console.error(block)
+					console.error(12);
 					return reject({
 						error: 'Invalid VCD data'
 					});
@@ -205,9 +218,13 @@ const generateJSON = (content, opts = {}, cb) => {
 		}
 		meta.endtime = currentTime.toString();
 		meta.scale = meta.timescale;
-		return resolve({ ...meta,
+		return resolve({
+			...meta,
 			signal: signals
 		})
 	}).then(wrappedCallback()).catch(cb);
 }
-module.exports = generateJSON;
+
+module.exports = {
+	toJSON: generateJSON
+};

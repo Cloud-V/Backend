@@ -22,7 +22,6 @@
         "async": "^3.2.0",
         "aws-sdk": "^2.807.0",
         "bcrypt": "^5.0.0",
-        "bluebird": "^3.4.7",
         "body-parser": "^1.19.0",
         "canvas": "^2.5.0",
         "clone": "^2.1.0",
