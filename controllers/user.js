@@ -89,103 +89,6 @@ const createUser = async (user = {}, cb) => {
         .catch(cb);
 };
 
-const createBotUser = function (user, cb) {
-    if (typeof user !== "object") {
-        return cb({
-            error: "Invalid user data.",
-        });
-    }
-
-    const userModel = require("../models/user").model;
-
-    return userModel.findOne(
-        {
-            username: user.username,
-            deleted: false,
-        },
-        function (err, existingUser) {
-            if (err) {
-                console.error("errors: ", err, 1);
-                return cb({
-                    error: "An error occurred while creating the user.",
-                });
-            } else if (existingUser) {
-                return cb(null, {
-                    _id: existingUser._id,
-                    username: existingUser.username,
-                    email: existingUser.email,
-                });
-            } else {
-                const newUser = new userModel();
-                newUser.username = user.username;
-                if (newUser.username != null) {
-                    newUser.username = newUser.username.trim().toLowerCase();
-                }
-                newUser.email = user.email;
-                if (newUser.email != null) {
-                    newUser.email = newUser.email.trim().toLowerCase();
-                }
-
-                newUser.authType = AuthType.Local;
-                newUser.authComplete = true;
-                newUser.type = UserType.Bot;
-                newUser.visible = false;
-
-                return bcrypt.hash(user.password, 10, function (err, hash) {
-                    if (err) {
-                        console.error(err);
-                        return cb({
-                            error: "An error occurred while creating the user.",
-                        });
-                    }
-                    newUser.password = hash;
-                    return newUser.save(function (err) {
-                        if (err) {
-                            if (err.code === 11000 || err.code === 11001) {
-                                return cb({
-                                    error: "Username already exists.",
-                                });
-                            } else if (
-                                err.name != null &&
-                                err.name === "ValidationError" &&
-                                err.errors != null
-                            ) {
-                                let errorMessage = "";
-                                for (let validationPath in err.errors) {
-                                    const validationError =
-                                        err.errors[validationPath];
-                                    errorMessage = `${errorMessage}${validationError.message}\n`;
-                                }
-                                if (errorMessage.trim() !== "") {
-                                    return cb({
-                                        error: errorMessage,
-                                    });
-                                } else {
-                                    console.error(err);
-                                    return cb({
-                                        error: "An error occurred while creating the new user.",
-                                    });
-                                }
-                            } else {
-                                console.error(err);
-                                return cb({
-                                    error: "An error occurred while creating the new user.",
-                                });
-                            }
-                        } else {
-                            return cb(null, {
-                                _id: newUser._id,
-                                username: newUser.username,
-                                email: newUser.email,
-                            });
-                        }
-                    });
-                });
-            }
-        }
-    );
-};
-
 const authUser = async (username, password, cb) =>
     new Promise(async (resolve, reject) => {
         try {
@@ -1109,7 +1012,6 @@ const login = async ({ username, password }, cb) => {
 };
 module.exports = {
     createUser,
-    createBotUser,
     authUser,
     authGmail,
     authFacebook,

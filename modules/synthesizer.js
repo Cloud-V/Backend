@@ -1,6 +1,6 @@
 const fs = require("fs-extra");
 const path = require("path");
-const { exec, spawn } = require("child_process");
+const { spawn } = require("child_process");
 
 const config = require("../config");
 const Parser = require("./parser");
@@ -152,13 +152,18 @@ const validateFile = function (filesPath, fileName, nameMap, cb) {
 						});
 					}
 
-					let names = files[0].replace(/\\/gm, '\\\\');
+					let names = [files[0].replace(/\\/gm, '\\\\')];
 					for (let i = 1, end = files.length, asc = 1 <= end; asc ? i < end : i > end; asc ? i++ : i--) {
-						names = `${names} ${files[i].replace(/\\/gm, '\\\\')}`;
+						names.push(files[i].replace(/\\/gm, '\\\\'));
 					}
 
 					const cmd = `iverilog -W all -t null ${names}`;
-					return exec(cmd, {
+
+					return spawn(
+						"iverilog",
+						["-Wall", "-t", "null"].concat(names),
+						
+						{
 							cwd: filesPath,
 							maxBuffer: 5000 * 1024,
 							timeout: 30000

@@ -86,57 +86,9 @@ modelFiles.forEach((elem) => {
     require(`./${path.join("models", elem)}`).model;
 });
 
-if (servedComponent === "api") {
-    // Create External/Bot Users
-    const externalUser = {
-        username: require("./config").externalUser.user,
-        password: require("./config").externalUser.pass,
-        email: require("./config").externalUser.email,
-    };
-    const versionUser = {
-        username: require("./config").versionUser.user,
-        password: require("./config").versionUser.pass,
-        email: require("./config").versionUser.email,
-    };
-
-    require("./controllers/user").createBotUser(
-        externalUser,
-        function (err, botUser) {
-            if (err) {
-                console.error(err);
-                throw err;
-            }
-        }
-    );
-
-    require("./controllers/user").createBotUser(
-        versionUser,
-        function (err, botUser) {
-            if (err) {
-                console.error(err);
-                throw err;
-            }
-        }
-    );
-}
-
 const app = express();
 
 app.use(compression());
-
-// Clear temp directories.
-if (isDev) {
-    rmdir("temp/*", function (error) {
-        if (error) {
-            throw error;
-        }
-    });
-    rmdir("uploads/*", function (error) {
-        if (error) {
-            throw error;
-        }
-    });
-}
 
 // view engine setup.
 app.set("views", path.join(__dirname, "views"));

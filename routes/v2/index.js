@@ -19,7 +19,6 @@ const S3Manager = require("../../modules/s3_manager");
 
 const _ = require("underscore");
 const TurndownService = require("turndown");
-const C = require("canvas");
 const shortid = require("shortid");
 const rmdir = require("rimraf");
 
@@ -77,7 +76,9 @@ const avatarUploader = multer({
     },
 }).single("avatar");
 
-router.get("/heartbeat", (req, res, next) => res.status(200).end());
+router.get("/heartbeat", (req, res, next) => {
+    res.status(200).set("Content-Type", "text/plain").send("ok");
+});
 
 router.get("/admin", restrict, async (req, res, next) => {
     if (!req.user.admin) {
@@ -570,68 +571,6 @@ router.post("/edit", restrict, async (req, res, next) => {
                     delete updates[k];
                 }
             }
-        }
-        if (req.file) {
-            req.file.extension = ".png";
-            const resizedPath = `${req.file.path}_resized.png`;
-            try {
-                const canvas = C.createCanvas(
-                    DefaultImageWidth,
-                    DefaultImageHeight
-                );
-                const context = canvas.getContext("2d");
-                context.fillStyle = "white";
-                context.fillRect(0, 0, canvas.width, canvas.height);
-                context.patternQuality = "best";
-                const sourceImage = await C.loadImage(req.file.path);
-
-                let finalHeight =
-                    (DefaultImageWidth / sourceImage.width) *
-                    sourceImage.height;
-                let heightOffset = (DefaultImageHeight - finalHeight) / 2;
-
-                context.drawImage(
-                    sourceImage,
-                    0,
-                    0,
-                    sourceImage.width,
-                    sourceImage.height,
-                    0,
-                    heightOffset,
-                    DefaultImageWidth,
-                    finalHeight
-                );
-
-                let data = canvas.toBuffer();
-                console.error(resizedPath);
-                await fs.writeFile(resizedPath, data);
-            } catch (e) {
-                console.error(e);
-                fs.unlink(req.file.path, (err) => console.error(err));
-                return res.status(500).json({
-                    error: "Image upload failed",
-                });
-            }
-            fs.unlink(req.file.path, (err) => console.error(err));
-
-            try {
-                const createdFile = await FileManager.createMediaFile(
-                    {
-                        path: resizedPath,
-                    },
-                    {
-                        user: req.user._id,
-                        ...req.file,
-                    }
-                );
-                updates.avatarFile = createdFile._id;
-            } catch (e) {
-                fs.unlink(resizedPath, (err) => console.error(err));
-                return res.status(500).json({
-                    error: "Image upload failed",
-                });
-            }
-            fs.unlink(resizedPath, (err) => console.error(err));
         }
 
         try {

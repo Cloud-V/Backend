@@ -7,7 +7,9 @@ const express = require("express");
 
 const router = express.Router();
 
-router.get("/heartbeat", (req, res, next) => res.status(200).end());
+router.get("/heartbeat", (req, res, next) => {
+    res.status(200).set("Content-Type", "text/plain").send("ok");
+});
 
 router.post("/validate", async (req, res, next) => {
     try {

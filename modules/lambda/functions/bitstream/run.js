@@ -12,6 +12,7 @@ module.exports = async ({
 }) => {
 	return new Promise(async (resolve, reject) => {
 		try {
+		    
 			const commandData = await prepareBitstream(repository, {
 				bitstreamName,
 				pcfId
