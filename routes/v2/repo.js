@@ -1503,7 +1503,7 @@ router.get("/stdcell", restrict, async function (req, res, next) {
             return next();
         }
 
-        let scls = null;
+        let scls = [];
         try {
             scls = fs.readdirSync(config.stdcellRepo).filter((entry) => {
                 if (entry.startsWith(".")) {
@@ -1520,9 +1520,7 @@ router.get("/stdcell", restrict, async function (req, res, next) {
             });
         } catch (err) {
             console.error(err);
-            throw {
-                error: "An error has occurred while attempting to retrieve the standard cell library list.",
-            };
+            console.error("Returning empty list.");
         }
 
         let result = [];

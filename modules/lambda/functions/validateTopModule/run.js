@@ -1,6 +1,4 @@
-const {
-	spawn
-} = require("child_process");
+const { spawn } = require("child_process");
 const path = require("path");
 
 const prepareSynthesis = require("../../db/prepare").synthesis;
